@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Logs y temporales
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Tests
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Ollama y modelos
+.ollama/
+models/
+
+# Workspace
+workspace/
