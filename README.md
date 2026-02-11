@@ -1,4 +1,4 @@
-# 🤖 AgentLow Pro v2.0
+# 🤖 Peanut Agent - PRO v2.0
 
 > **Sistema de Agente Local con IA Avanzado** - Haz que modelos pequeños funcionen como los grandes
 
