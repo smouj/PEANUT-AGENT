@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   ollama:
     image: ollama/ollama:latest
-    container_name: agentlow-ollama
+    container_name: peanut-ollama
     ports:
       - "11434:11434"
     volumes:
@@ -22,34 +20,22 @@ services:
       timeout: 10s
       retries: 3
 
-  agentlow:
+  peanut-agent:
     build: .
-    container_name: agentlow-pro
-    ports:
-      - "8000:8000"
+    container_name: peanut-agent
     environment:
-      - OLLAMA_URL=http://ollama:11434
-      - WORK_DIR=/workspace
+      - PEANUT_OLLAMA_URL=http://ollama:11434
+      - PEANUT_WORK_DIR=/workspace
     volumes:
       - ./workspace:/workspace
-      - ./logs:/app/logs
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
     restart: unless-stopped
-    command: uvicorn agentlow.web_ui:app --host 0.0.0.0 --port 8000
-
-  # Opcional: Web UI adicional con reverse proxy
-  nginx:
-    image: nginx:alpine
-    container_name: agentlow-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - agentlow
-    restart: unless-stopped
+    entrypoint: ["peanut"]
+    command: []
+    stdin_open: true
+    tty: true
 
 volumes:
   ollama_data:
@@ -57,4 +43,4 @@ volumes:
 
 networks:
   default:
-    name: agentlow-network
+    name: peanut-network
