@@ -37,17 +37,3 @@ models/
 
 # Workspace
 workspace/
-
-# Peanut Agent cache
-.peanut_cache/
-
-# IDE
-.idea/
-.vscode/
-*.code-workspace
-
-# mypy
-.mypy_cache/
-
-# ruff
-.ruff_cache/

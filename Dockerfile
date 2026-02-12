@@ -1,30 +1,47 @@
-FROM python:3.11-slim AS base
+FROM python:3.11-slim
 
-LABEL maintainer="smouj"
-LABEL description="Peanut Agent - Local AI agent with secure tool calling"
+# Metadatos
+LABEL maintainer="AgentLow Pro"
+LABEL description="Sistema de agente local con IA avanzado"
 
-# System deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
     curl \
     git \
+    sqlite3 \
+    openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Non-root user
-RUN useradd -m -u 1000 peanut
+# Instalar Ollama (opcional - puede correr en host)
+# RUN curl -fsSL https://ollama.com/install.sh | sh
 
+# Crear usuario no-root
+RUN useradd -m -u 1000 agentlow
+
+# Directorio de trabajo
 WORKDIR /app
 
-# Install Python deps first (better layer caching)
-COPY pyproject.toml README.md ./
+# Copiar requirements
+COPY requirements.txt .
+
+# Instalar dependencias Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código
 COPY src/ ./src/
-RUN pip install --no-cache-dir .
+COPY setup.py .
 
-# Switch to non-root
-USER peanut
-RUN mkdir -p /home/peanut/workspace
+# Instalar el paquete
+RUN pip install -e .
 
-ENV PEANUT_WORK_DIR=/home/peanut/workspace
-ENV PEANUT_OLLAMA_URL=http://ollama:11434
+# Cambiar a usuario no-root
+USER agentlow
 
-ENTRYPOINT ["peanut"]
-CMD ["--check"]
+# Crear directorio de trabajo
+RUN mkdir -p /home/agentlow/workspace
+
+# Puerto para web UI
+EXPOSE 8000
+
+# Comando por defecto
+CMD ["python", "-m", "agentlow.cli"]

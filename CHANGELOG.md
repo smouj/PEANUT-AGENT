@@ -1,38 +1,20 @@
-# Changelog
+# CHANGELOG - AgentLow Pro
 
-## v2.0.0 - 2026-02-12
+## v2.0.0 - 2026-02-11
+- **Mejoras principales**:
+  - Caché inteligente (hasta 50x más rápido).
+  - Streaming de respuestas.
+  - Selección automática de modelo por tarea.
+  - Sistema de plugins extensible.
+  - Logging profesional con niveles.
+  - Interfaces: CLI (Rich), Web UI (FastAPI), REST API.
+- **Herramientas nuevas**: database (SQLite), ssh, web_scrape, scheduler.
+- **Seguridad**: Allowlist, path protection, timeouts.
+- **Deployment**: Docker con GPU, CI/CD con GitHub Actions.
+- **Testing**: Suite con pytest y coverage.
+- **Estructura**: Paquete Python con src/, listo para PyPI.
 
-Complete rewrite of the agent system.
-
-### Security
-- Eliminated all `shell=True` usage — all subprocess calls use argument lists
-- Fixed command injection vulnerabilities in git and docker tools
-- Added forbidden pattern detection (rm -rf, sudo, eval, | bash, etc.)
-- CI pipeline includes automated `shell=True` detection
-
-### Architecture
-- New `src/peanut_agent/` package structure with proper Python packaging
-- Modern `pyproject.toml` replacing `setup.py`
-- Immutable dataclass configuration with environment variable support
-- Modular tools system (executor + schemas separated)
-
-### Features
-- SQLite-based response cache with TTL expiry and hit/miss statistics
-- Rich CLI with interactive mode, single-command mode, and preflight checks
-- System prompt for better tool-calling behavior
-- Preflight check to verify Ollama connectivity before running
-
-### Testing
-- 69 tests covering agent, executor, cache, and config
-- All tests run without Ollama (mocked HTTP)
-- Path traversal, command injection, and forbidden pattern tests
-
-### Removed
-- Old flat file structure (agent.py, tools.py, config.py in root)
-- Broken `src/agentlow/` package that never worked
-- References to non-existent features (plugins, streaming, web scraping, SSH, database)
-
-## v1.0.0
-
-- Initial version with basic tool calling via Ollama
-- Core tools: shell, files, http, git, docker
+## v1.0.0 - Fecha inicial
+- Versión base con tool calling básico.
+- Herramientas core: shell, files, http, git, docker.
+- Integración con Ollama.
