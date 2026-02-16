@@ -1,33 +1,35 @@
 # 🥜 PEANUT-AGENT — PRO v0.1
 
-**Agente autónomo _local-first_** optimizado para modelos pequeños (7B) en **Ollama**, diseñado para que un modelo “pequeño” se comporte como uno grande gracias a **arquitectura**, no magia.
+**Agente autónomo _local-first_** optimizado para modelos pequeños (7B) en **Ollama**.
 
 > Filosofía: **Local • Offline‑friendly • Seguro • Modular**.
 
 ---
 
-## ✨ Qué trae (PRO)
+## ✨ Qué incluye (PRO)
 
 - ✅ **Tool Calling** (JSON) con **allowlist** + **anti‑path traversal**
 - ✅ **Reflection Loop**: auto‑corrección de argumentos de tool calls (hasta **3 reintentos**)
 - ✅ **Peanut Memory (RAG local)**: aprende de éxitos pasados (embeddings locales con Ollama)
 - ✅ **Gateway UI**
   - **Consola** (Rich) multi‑sesión
-  - **Web** (FastAPI + WebSocket) estilo terminal (puerto **18789**)
+  - **Web** (FastAPI + WebSocket) estilo terminal (**por defecto en el puerto 18889**)
+
+> Nota: el puerto 18889 está elegido para evitar colisión con OpenClaw (18789).
 
 ---
 
 ## ✅ Requisitos
 
-- **Python 3.10+**
+- **Python 3.10+** (Windows: recomendable 3.11/3.12)
 - **Git**
-- (Recomendado) **Ollama** instalado y corriendo (el wizard te ayuda a instalarlo)
+- (Recomendado) **Ollama** instalado y corriendo (el wizard te guía)
 
-> Nota “offline‑friendly”: la primera instalación de dependencias de Python puede requerir internet para `pip`. Después puedes operar local.
+> “Offline‑friendly”: la primera instalación de dependencias puede requerir internet para `pip`. Después, todo funciona local.
 
 ---
 
-## 🚀 Instalación (recomendada) — 1 comando después de clonar
+## 🚀 Instalación (recomendada) — 1 comando
 
 ### 1) Clona el repositorio
 
@@ -38,71 +40,95 @@ cd PEANUT-AGENT
 
 ### 2) Ejecuta el instalador (1 comando)
 
-**Linux/macOS:**
-```bash
-bash install.sh
-```
-
 **Windows (PowerShell):**
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-Esto:
-- crea un entorno virtual local **.venv/** (si no existe),
-- instala dependencias,
-- lanza el **Wizard 🧙** con una UI bonita,
-- te guía para instalar/arrancar **Ollama**,
-- ofrece **instalación limpia** (borrar `~/.peanut-agent`).
+**Linux/macOS:**
 
-> Alternativa (sin scripts): `python wizard.py` — el wizard también puede auto‑crear `.venv/`.
+```bash
+bash install.sh
+```
+
+El instalador:
+- crea/usa un entorno virtual local **.venv/**,
+- instala dependencias desde `requirements.txt`,
+- lanza el **wizard** (UI en consola),
+- detecta Ollama, propone arrancarlo y (si está listo) sugiere modelos.
 
 ---
 
 ## 🧙 Wizard
 
-Ejecuta:
+También puedes ejecutar el wizard directamente (si quieres controlar flags):
 
 ```bash
 python wizard.py
 ```
 
-El wizard:
-- detecta dependencias y las instala dentro de `.venv/` (por defecto),
-- detecta Ollama y te guía a instalarlo si falta,
-- valida conectividad a `http://localhost:11434`,
-- sugiere modelos (`qwen2.5:7b`, `llama3`, `nomic-embed-text`) y hace `pull` si lo apruebas,
-- pregunta si quieres **instalación limpia**.
+Flags útiles:
+
+```bash
+python wizard.py --yes      # aceptar defaults
+python wizard.py --clean    # instalación limpia (borra ~/.peanut-agent)
+python wizard.py --no-pull  # no descargar modelos
+```
 
 ---
 
 ## 🖥️ Gateway UI
 
-### Gateway consola (multi‑sesión)
+### Opción A: Gateway consola (multi‑sesión)
 
-```bash
-python gateway.py
+**Windows (recomendado):**
+
+```powershell
+.\run_gateway.ps1
 ```
 
-### Gateway web (terminal‑like)
+**Manual (Windows):**
 
-```bash
-python web_ui.py
+```powershell
+.\.venv\Scripts\python.exe gateway.py
 ```
 
-Luego abre:
-- `http://127.0.0.1:18789/`
+### Opción B: Gateway web (terminal‑like)
+
+**Windows (recomendado):**
+
+```powershell
+.\run_web.ps1
+```
+
+**Manual (Windows):**
+
+```powershell
+.\.venv\Scripts\python.exe web_ui.py
+```
+
+Abre:
+- `http://127.0.0.1:18889/`
+
+Cambiar puerto:
+
+```powershell
+.\.venv\Scripts\python.exe web_ui.py --port 19999
+# o
+set PEANUT_WEB_PORT=19999
+```
 
 ---
 
 ## 🧠 Arquitectura en 90 segundos
 
 ### 1) Tool Calling seguro
-El ejecutor vive en `tools.py`:
+En `tools.py`:
 - allowlist de comandos
 - bloqueo de patrones destructivos
 - prevención de **path traversal**
-- timeouts y errores explícitos
+- timeouts + errores explícitos
 
 ### 2) Reflection Loop (auto‑corrección)
 Después de cada tool call:
@@ -113,61 +139,26 @@ Después de cada tool call:
 ### 3) Peanut Memory (RAG local)
 Antes de actuar:
 - `memory.retrieve_memory(task)` trae **top‑2** tareas similares
-- se inyecta en el prompt:
-  - `🥜 CONSEJOS DEL PASADO: [...]`
+- se inyecta en el prompt: `🥜 CONSEJOS DEL PASADO: [...]`
 
 En éxito:
 - `memory.add_memory(task, tool_call)` guarda (tarea + herramienta + args + embedding)
 
----
-
-## 🥜 Gamificación (Modo Experto)
-
-Estado en `~/.peanut-agent/state.json`:
-
-- `peanuts <= 10` → Modo Normal
-- `peanuts > 10` → **MODO EXPERTO** (system prompt más “afilado”)
-
----
-
-## 📦 Estructura del proyecto
-
-```text
-.
-├─ agent.py              # Agente principal (tools + reflection + memory)
-├─ tools.py              # Ejecutores de herramientas (seguridad)
-├─ reflection.py         # Reflection Loop (Pydantic + Ollama)
-├─ memory.py             # RAG local (JSONL + embeddings)
-├─ wizard.py             # Wizard bonito (auto-venv + checks)
-├─ gateway.py            # Gateway consola multi-sesión (Rich)
-├─ web_ui.py             # Gateway web (FastAPI + WS) puerto 18789
-├─ install.sh            # Instalación 1 comando (Linux/macOS)
-├─ install.ps1           # Instalación 1 comando (Windows)
-├─ scripts/
-│  ├─ install_ollama.sh
-│  └─ install_ollama.ps1
-├─ web/
-│  └─ index.html         # UI terminal web
-├─ integrations/
-│  └─ picoclaw.py        # Integración opcional (ligera)
-└─ docs/
-   ├─ ARCHITECTURE.md
-   ├─ SECURITY.md
-   ├─ REFLECTION_MEMORY.md
-   ├─ WIZARD.md
-   └─ TROUBLESHOOTING.md
-```
+### 4) Gamificación (Modo Experto)
+Se guarda en `~/.peanut-agent/state.json`:
+- `peanuts <= 10`: Modo Normal
+- `peanuts > 10`: **MODO EXPERTO** (system prompt más agresivo)
 
 ---
 
 ## 🔒 Seguridad
 
-Lee: `docs/SECURITY.md`
+Lee `docs/SECURITY.md`.
 
 Resumen:
-- allowlist estricta para shell
-- bloqueos contra comandos destructivos
-- prevención de paths fuera de `work_dir`
+- allowlist estricta
+- prevención de rutas fuera de `work_dir`
+- sin `sudo`, sin `rm -rf`, sin comandos destructivos por defecto
 
 ---
 
@@ -175,15 +166,23 @@ Resumen:
 
 Adaptador mínimo en `integrations/picoclaw.py`.
 
-Por defecto **no descarga nada pesado**. Se integra cuando tengas el binario/CLI disponible.
+Por defecto **no descarga nada pesado**. Se activa cuando tengas PicoClaw disponible en tu entorno.
 
 ---
 
 ## 🆘 Troubleshooting rápido
 
-- **Ollama no responde** → `ollama serve` (o revisa el servicio)
-- **Puerto 18789 ocupado** → cambia el puerto en `web_ui.py` o libera el proceso
-- **Modelos** → `ollama list` / `ollama pull qwen2.5:7b`
+- **Windows: “python no se encontró”**
+  - Usa el launcher: `py --version`
+  - Ejecuta el instalador: `powershell -ExecutionPolicy Bypass -File .\install.ps1`
+
+- **Ollama: “connection refused” (11434)**
+  - Abre la app **Ollama** (Windows) o ejecuta: `ollama serve`
+  - Verifica: `ollama list`
+
+- **Puerto ocupado**
+  - Web UI por defecto: 18889
+  - Cambia con `--port` o `PEANUT_WEB_PORT`
 
 Más en `docs/TROUBLESHOOTING.md`.
 

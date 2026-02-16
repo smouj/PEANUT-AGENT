@@ -3,8 +3,11 @@
 ## Requisitos
 - Python 3.10+
 - Git
+- (Recomendado) Ollama
 
-## Instalación (recomendada)
+## Instalación (1 comando)
+
+### Linux/macOS
 
 ```bash
 git clone https://github.com/smouj/PEANUT-AGENT.git
@@ -12,7 +15,7 @@ cd PEANUT-AGENT
 bash install.sh
 ```
 
-En Windows (PowerShell):
+### Windows (PowerShell)
 
 ```powershell
 git clone https://github.com/smouj/PEANUT-AGENT.git
@@ -22,13 +25,34 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 ## Abrir Gateway
 
-Consola:
-```bash
-python gateway.py
+### Consola (multi‑sesión)
+
+Windows:
+```powershell
+.\run_gateway.ps1
 ```
 
-Web:
+Linux/macOS:
 ```bash
-python web_ui.py
-# http://127.0.0.1:18789/
+./.venv/bin/python gateway.py
+```
+
+### Web (terminal‑like)
+
+Windows:
+```powershell
+.\run_web.ps1
+```
+
+Linux/macOS:
+```bash
+./.venv/bin/python web_ui.py
+```
+
+Abre:
+- `http://127.0.0.1:18889/`
+
+Cambiar puerto:
+```bash
+python web_ui.py --port 19999
 ```

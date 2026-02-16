@@ -1,22 +1,21 @@
-"""
-🥜 Peanut Wizard (PRO)
-----------------------
+"""🥜 Peanut Wizard (PRO)
 
-Wizard interactivo "bonito" para preparar el entorno de PEANUT-AGENT.
+Wizard interactivo para preparar el entorno de PEANUT-AGENT.
 
 Objetivo:
 - Instalación en 1 comando (después de clonar el repo).
-- Aislado por defecto: crea y usa un entorno virtual local .venv/
+- Aislado por defecto: crea/usa un entorno virtual local .venv/
 - Seguridad: NO ejecuta comandos destructivos; solo instala dependencias del proyecto,
-  guía instalación de Ollama y ofrece limpieza de estado.
+  guía instalación/arranque de Ollama y ofrece limpieza de estado.
 
 Ejecutar:
-    python wizard.py
+  python wizard.py
 
 Atajos:
-    python wizard.py --yes        # Aceptar valores por defecto (menos preguntas)
-    python wizard.py --clean      # Forzar instalación limpia (borrar ~/.peanut-agent)
-    python wizard.py --no-pull    # No hacer "ollama pull" de modelos
+  python wizard.py --yes        # Aceptar defaults
+  python wizard.py --clean      # Forzar instalación limpia (borrar ~/.peanut-agent)
+  python wizard.py --no-pull    # No hacer "ollama pull" de modelos
+  python wizard.py --no-venv    # No crear .venv (no recomendado)
 """
 
 from __future__ import annotations
@@ -27,21 +26,46 @@ import platform
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+
 DEFAULT_OLLAMA_URL = "http://localhost:11434"
 STATE_DIR = Path.home() / ".peanut-agent"
+DEFAULT_WEB_PORT = 18889  # evita conflicto con OpenClaw (18789)
 
 ASCII_TITLE = r"""
- ____                  _             _        _             _
-|  _ \ _ __ ___   __ _| |_ ___  _ __| |__    / \   __ _  __| | ___ _ __
-| |_) | '__/ _ \ / _` | __/ _ \| '__| '_ \  / _ \ / _` |/ _` |/ _ \ '__|
-|  __/| | | (_) | (_| | || (_) | |  | |_) |/ ___ \ (_| | (_| |  __/ |
-|_|   |_|  \___/ \__,_|\__\___/|_|  |_.__/ /_/   \_\__,_|\__,_|\___|_|
+ ____  _____    _    _   _ _   _ _____ 
+|  _ \| ____|  / \  | \ | | | | |_   _|
+| |_) |  _|   / _ \ |  \| | | | | | |  
+|  __/| |___ / ___ \| |\  | |_| | | |  
+|_|   |_____/_/   \_\_| \_|\___/  |_|  
 
-                       🥜 PEANUT-AGENT • PRO v0.1
-""".strip("\n")
+    _    ____ _____ _   _ _____ 
+   / \  / ___| ____| \ | |_   _|
+  / _ \| |  _|  _| |  \| | | |  
+ / ___ \ |_| | |___| |\  | | |  
+/_/   \_\____|_____|_| \_| |_|  
+
+            🥜 PEANUT-AGENT • PRO v0.1  |  Wizard
+""".rstrip()
+
+
+def _force_utf8_console() -> None:
+    """Evita mojibake (Windows) y mejora salida en consola."""
+    if os.name != "nt":
+        return
+    try:
+        # Cambia codepage a UTF-8 (mejor para emojis y acentos)
+        os.system("chcp 65001 >NUL")
+    except Exception:
+        pass
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+    except Exception:
+        pass
 
 
 def _run(cmd: List[str], *, cwd: Optional[Path] = None) -> Tuple[int, str]:
@@ -51,14 +75,15 @@ def _run(cmd: List[str], *, cwd: Optional[Path] = None) -> Tuple[int, str]:
         cwd=str(cwd) if cwd else None,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     out = (p.stdout or "") + (p.stderr or "")
     return p.returncode, out.strip()
 
 
 def _is_venv() -> bool:
-    """True si el proceso corre dentro de un virtualenv."""
-    return sys.prefix != sys.base_prefix
+    return sys.prefix != getattr(sys, "base_prefix", sys.prefix)
 
 
 def _venv_python(venv_dir: Path) -> Path:
@@ -67,24 +92,13 @@ def _venv_python(venv_dir: Path) -> Path:
     return venv_dir / "bin" / "python"
 
 
-def _print_plain(title: str, lines: List[str]) -> None:
-    print("\n" + title)
-    print("-" * max(10, len(title)))
-    for ln in lines:
-        print(ln)
-
-
 def _create_or_update_venv(project_root: Path, venv_dir: Path, requirements_path: Path) -> None:
-    """Crea .venv e instala dependencias dentro del venv."""
     if not requirements_path.exists():
         raise SystemExit(f"No encuentro requirements.txt en: {requirements_path}")
 
     if not venv_dir.exists():
-        _print_plain(
-            "🧪 Creando entorno virtual",
-            [f"Ruta: {venv_dir}", "Esto es local al proyecto y no toca tu sistema."],
-        )
-        rc, out = _run([sys.executable, "-m", "venv", str(venv_dir)])
+        print("\n🧪 Creando entorno virtual (.venv)…")
+        rc, out = _run([sys.executable, "-m", "venv", str(venv_dir)], cwd=project_root)
         if rc != 0:
             raise SystemExit(f"Falló crear venv:\n{out}")
 
@@ -92,224 +106,207 @@ def _create_or_update_venv(project_root: Path, venv_dir: Path, requirements_path
     if not vpy.exists():
         raise SystemExit(f"No encuentro el Python del venv: {vpy}")
 
-    _print_plain("📦 Instalando dependencias", ["Actualizando pip…"])
-    rc, out = _run([str(vpy), "-m", "pip", "install", "--upgrade", "pip"])
+    print("\n📦 Instalando dependencias… (pip)")
+    rc, out = _run([str(vpy), "-m", "pip", "install", "--upgrade", "pip"], cwd=project_root)
     if rc != 0:
         raise SystemExit(f"Falló actualizar pip:\n{out}")
 
-    _print_plain("📦 Instalando dependencias", [f"pip install -r {requirements_path.name}"])
-    rc, out = _run([str(vpy), "-m", "pip", "install", "-r", str(requirements_path)])
+    rc, out = _run([str(vpy), "-m", "pip", "install", "-r", str(requirements_path)], cwd=project_root)
     if rc != 0:
         raise SystemExit(f"Falló instalar dependencias:\n{out}")
 
 
 def _reexec_in_venv(project_root: Path, venv_dir: Path, argv: List[str]) -> None:
-    """Re-ejecuta este wizard dentro del venv para usar Rich/requests con UI completa."""
     vpy = _venv_python(venv_dir)
     if not vpy.exists():
         raise SystemExit(f"No encuentro el Python del venv: {vpy}")
 
-    # Evitar bucle infinito: añadimos flag interno.
     new_argv = [str(vpy), str(project_root / "wizard.py"), "--_in-venv"] + argv
     rc = subprocess.call(new_argv)
     raise SystemExit(rc)
 
 
-def _ask_yes_no(question: str, default: bool) -> bool:
-    """Pregunta simple (sin Rich) para fase bootstrap."""
-    suffix = "[Y/n]" if default else "[y/N]"
+def _ollama_reachable(requests_mod, url: str) -> bool:
     try:
-        ans = input(f"{question} {suffix}: ").strip().lower()
-    except EOFError:
-        return default
-    if not ans:
-        return default
-    return ans in {"y", "yes", "s", "si", "sí"}
-
-
-def _parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(add_help=True)
-
-    p.add_argument("--ollama-url", default=DEFAULT_OLLAMA_URL, help="URL de Ollama (default: http://localhost:11434)")
-    p.add_argument("--clean", action="store_true", help="Forzar instalación limpia (borra ~/.peanut-agent)")
-    p.add_argument("--yes", action="store_true", help="Aceptar valores por defecto y reducir preguntas")
-    p.add_argument("--no-venv", action="store_true", help="No crear/usar .venv (no recomendado)")
-    p.add_argument("--no-pull", action="store_true", help="No ejecutar ollama pull de modelos")
-
-    # Flag interno para evitar re-ejecución infinita.
-    p.add_argument("--_in-venv", action="store_true", help=argparse.SUPPRESS)
-
-    return p.parse_args()
-
-
-def _ollama_reachable(requests_mod, ollama_url: str, timeout_s: int = 2) -> bool:
-    try:
-        r = requests_mod.get(f"{ollama_url}/api/tags", timeout=timeout_s)
+        r = requests_mod.get(f"{url}/api/tags", timeout=2)
         return r.status_code == 200
     except Exception:
         return False
 
 
-def run_wizard() -> None:
-    args = _parse_args()
+def _try_start_ollama_server() -> Tuple[bool, str]:
+    """Intenta arrancar `ollama serve` en segundo plano (best-effort)."""
+    if shutil.which("ollama") is None:
+        return False, "No encuentro `ollama` en PATH."
+
+    try:
+        kwargs = {
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+        }
+
+        if os.name == "nt":
+            DETACHED_PROCESS = 0x00000008
+            CREATE_NEW_PROCESS_GROUP = 0x00000200
+            kwargs["creationflags"] = DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+
+        subprocess.Popen(["ollama", "serve"], **kwargs)  # noqa: S603,S607
+        return True, "Intento de arranque lanzado (ollama serve)."
+    except FileNotFoundError:
+        return False, "No encuentro el binario `ollama`."
+    except Exception as e:
+        return False, f"No pude iniciar Ollama: {e}"
+
+
+def main() -> None:
+    _force_utf8_console()
+
+    parser = argparse.ArgumentParser(description="🥜 Peanut Wizard (PRO)")
+    parser.add_argument("--yes", action="store_true", help="Aceptar defaults")
+    parser.add_argument("--clean", action="store_true", help="Instalación limpia (borra ~/.peanut-agent)")
+    parser.add_argument("--no-pull", action="store_true", help="No descargar modelos")
+    parser.add_argument("--no-venv", action="store_true", help="No crear .venv (no recomendado)")
+    parser.add_argument("--ollama-url", default=DEFAULT_OLLAMA_URL, help="URL de Ollama (default: http://localhost:11434)")
+    parser.add_argument("--_in-venv", action="store_true", help=argparse.SUPPRESS)
+    args = parser.parse_args()
+
     project_root = Path(__file__).resolve().parent
     venv_dir = project_root / ".venv"
     requirements_path = project_root / "requirements.txt"
 
-    # --- Bootstrap: venv + deps (solo stdlib aquí) ---
+    # Bootstrap: crear venv y re-ejecutar dentro
     if not args._in_venv and not args.no_venv and not _is_venv():
         if args.yes:
             create = True
         else:
-            create = _ask_yes_no("¿Crear/usar entorno virtual local .venv y auto-instalar dependencias?", True)
+            ans = input("¿Crear/usar entorno virtual local .venv y auto-instalar dependencias? [Y/n]: ").strip().lower()
+            create = (ans in ("", "y", "yes", "s", "si"))
 
         if create:
             _create_or_update_venv(project_root, venv_dir, requirements_path)
-            # Re-ejecutar dentro del venv para UI completa
-            passthrough = []
-            for raw in sys.argv[1:]:
-                if raw == "--_in-venv":
-                    continue
-                passthrough.append(raw)
+            passthrough = [a for a in sys.argv[1:] if a != "--_in-venv"]
             _reexec_in_venv(project_root, venv_dir, passthrough)
-        else:
-            _print_plain(
-                "⚠️ Instalación sin .venv",
-                [
-                    "Continuarás usando tu Python del sistema.",
-                    "Si faltan paquetes, ejecuta: python -m pip install -r requirements.txt",
-                ],
-            )
 
-    # --- UI completa (requiere deps) ---
+    # UI completa (requiere deps)
     try:
         import requests  # type: ignore
         from rich import box  # type: ignore
         from rich.console import Console  # type: ignore
         from rich.panel import Panel  # type: ignore
-        from rich.prompt import Confirm, Prompt  # type: ignore
+        from rich.prompt import Confirm  # type: ignore
         from rich.table import Table  # type: ignore
     except Exception as e:
-        _print_plain(
-            "❌ Dependencias faltantes",
-            [
-                f"Error importando UI/deps: {e}",
-                "Solución rápida:",
-                "  python -m pip install -r requirements.txt",
-                "O ejecuta el wizard sin --no-venv para auto-instalar en .venv.",
-            ],
-        )
+        print("\n❌ Dependencias faltantes para UI completa:")
+        print(f"{e}")
+        print("\nSolución:")
+        print("  python -m pip install -r requirements.txt")
         raise SystemExit(1)
 
     console = Console()
     console.print(Panel.fit(ASCII_TITLE, border_style="yellow", padding=(1, 2)))
     console.print("[bold]Wizard de instalación y gateway — listo para producción local.[/bold]\n")
 
-    # Info
     info = Table(box=box.SIMPLE, show_header=False)
     info.add_row("OS", f"{platform.system()} {platform.release()}")
     info.add_row("Python", sys.version.split()[0])
     info.add_row("Root", str(project_root))
     info.add_row("Venv", "✅ .venv" if _is_venv() else "⚠️ sistema")
     info.add_row("State", str(STATE_DIR))
+    info.add_row("Web Port", str(DEFAULT_WEB_PORT))
     console.print(info)
 
-    # Paso 1: instalación limpia
+    # Limpieza
     console.print("\n[bold]🧼 Instalación limpia[/bold]")
-    if args.clean:
-        do_clean = True
-    else:
-        do_clean = False
-        if STATE_DIR.exists():
-            console.print(f"[yellow]Detectado estado previo en:[/yellow] {STATE_DIR}")
-            do_clean = Confirm.ask("¿Quieres borrar datos existentes antes de continuar?", default=False)
+    do_clean = bool(args.clean)
+    if not do_clean and STATE_DIR.exists() and not args.yes:
+        console.print(f"[yellow]Detectado estado previo en:[/yellow] {STATE_DIR}")
+        do_clean = Confirm.ask("¿Borrar datos existentes antes de continuar?", default=False)
 
     if do_clean and STATE_DIR.exists():
-        confirm = "BORRAR" if args.yes else Prompt.ask("Escribe BORRAR para confirmar", default="")
-        if confirm.strip().upper() != "BORRAR":
-            console.print("[red]Cancelado. No se borró nada.[/red]")
-        else:
+        confirm = "BORRAR" if args.yes else input("Escribe BORRAR para confirmar: ").strip()
+        if confirm.upper() == "BORRAR":
             shutil.rmtree(STATE_DIR, ignore_errors=True)
             console.print("[green]✅ Datos borrados.[/green]")
+        else:
+            console.print("[red]Cancelado. No se borró nada.[/red]")
     elif not STATE_DIR.exists():
         console.print("[green]✅ No hay datos previos.[/green]")
 
-    # Paso 2: Ollama
+    # Ollama
     console.print("\n[bold]🧠 Ollama[/bold]")
-    ollama_url = args.ollama_url.strip()
+    ollama_url = str(args.ollama_url).strip()
     has_bin = shutil.which("ollama") is not None
-    reachable = _ollama_reachable(requests, ollama_url)
+    reachable = _ollama_reachable(requests, ollama_url) if has_bin else False
 
-    table = Table(box=box.SIMPLE, show_header=True, header_style="bold")
-    table.add_column("Chequeo")
-    table.add_column("Estado")
-    table.add_row("Binario `ollama`", "✅" if has_bin else "❌")
-    table.add_row(f"Servidor ({ollama_url})", "✅" if reachable else "❌")
-    console.print(table)
+    t = Table(box=box.SIMPLE, show_header=True, header_style="bold")
+    t.add_column("Chequeo")
+    t.add_column("Estado")
+    t.add_row("Binario `ollama`", "✅" if has_bin else "❌")
+    t.add_row(f"Servidor ({ollama_url})", "✅" if reachable else "❌")
+    console.print(t)
 
     if not has_bin:
         console.print("[yellow]ℹ️ No encuentro `ollama` en PATH.[/yellow]")
-        sysname = platform.system().lower()
-        if sysname in ["linux", "darwin"]:
-            auto_install = True if args.yes else Confirm.ask(
-                "¿Intentar instalar Ollama ahora? (usa scripts/install_ollama.sh)",
-                default=True,
-            )
-            if auto_install:
-                script = project_root / "scripts" / "install_ollama.sh"
-                if not script.exists():
-                    console.print("[red]❌ No encuentro scripts/install_ollama.sh[/red]")
-                    raise SystemExit(1)
-                script.chmod(0o755)
-                rc, out = _run(["bash", str(script)], cwd=project_root)
-                if out:
-                    console.print(out)
-                if rc != 0:
-                    raise SystemExit(1)
+        if platform.system().lower().startswith("win"):
+            console.print("Instala Ollama desde: https://ollama.com/download (Windows)")
+            console.print("Luego abre la app 'Ollama' o ejecuta: [bold]ollama serve[/bold]")
         else:
-            console.print(
-                "[yellow]➡️ En Windows, ejecuta scripts/install_ollama.ps1 o instala desde ollama.com/download[/yellow]"
-            )
-
-    # Rechequeo conectividad
-    if not _ollama_reachable(requests, ollama_url):
-        console.print("[yellow]⚠️ No puedo conectar con el servidor de Ollama.[/yellow]")
-        console.print("Sugerencias:")
-        console.print("- Ejecuta: [bold]ollama serve[/bold]")
-        console.print("- Verifica el puerto 11434")
+            console.print("En Linux/Mac puedes usar: scripts/install_ollama.sh")
+        console.print("\n[red]Sin Ollama corriendo, el agente NO podrá responder.[/red]")
     else:
-        console.print("[green]✅ Ollama accesible.[/green]")
+        if not reachable:
+            console.print("[yellow]⚠️ No puedo conectar con el servidor de Ollama.[/yellow]")
+            if not args.yes:
+                try_start = Confirm.ask("¿Intentar arrancar `ollama serve` ahora?", default=True)
+            else:
+                try_start = True
 
-    # Paso 3: modelos (ligero)
-    console.print("\n[bold]📦 Modelos recomendados[/bold]")
-    models = ["qwen2.5:7b", "llama3", "nomic-embed-text"]
-    console.print(f"[cyan]Lista:[/cyan] {', '.join(models)}")
+            if try_start:
+                ok, msg = _try_start_ollama_server()
+                console.print(f"[cyan]{msg}[/cyan]")
+                time.sleep(1.2)
+                reachable = _ollama_reachable(requests, ollama_url)
 
-    if args.no_pull:
-        console.print("[yellow]⏭️ Saltando descarga de modelos (--no-pull).[/yellow]")
-    else:
-        if shutil.which("ollama") is None:
-            console.print("[yellow]⚠️ `ollama` no está disponible; salto el pull.[/yellow]")
-        else:
-            do_pull = True if args.yes else Confirm.ask("¿Quieres hacer `ollama pull` ahora?", default=False)
+            if not reachable:
+                console.print("\nSugerencias:")
+                console.print("- Ejecuta: [bold]ollama serve[/bold] (y deja esa consola abierta)")
+                console.print("- O abre la app 'Ollama' desde el menú Inicio")
+                console.print("- Verifica el puerto 11434 (firewall/antivirus)")
+
+        # Pull modelos solo si el server responde
+        models = ["qwen2.5:7b", "llama3", "nomic-embed-text"]
+        if reachable and not args.no_pull:
+            console.print("\n[bold]📦 Modelos recomendados[/bold]")
+            console.print(f"Lista: {', '.join(models)}")
+            do_pull = True if args.yes else Confirm.ask("¿Hacer `ollama pull` ahora?", default=False)
             if do_pull:
                 for m in models:
-                    console.print(f"\n[bold]⬇️  ollama pull {m}[/bold]")
+                    console.print(f"\n⬇️  [bold]ollama pull {m}[/bold]")
                     rc, out = _run(["ollama", "pull", m], cwd=project_root)
-                    if rc != 0:
+                    if rc == 0:
+                        console.print("[green]✅ OK[/green]")
+                    else:
                         console.print("[red]❌ Falló pull[/red]")
                         if out:
                             console.print(out)
-                    else:
-                        console.print("[green]✅ OK[/green]")
-            else:
-                console.print("[yellow]⏭️ Saltando descarga de modelos.[/yellow]")
 
-    console.print("\n[green]✅ Wizard completado.[/green]")
-    console.print("Siguiente:")
-    console.print("- Gateway consola: [bold]python gateway.py[/bold]")
-    console.print("- Gateway web:    [bold]python web_ui.py[/bold]")
+    # Siguiente pasos
+    console.print("\n[bold green]✅ Wizard completado.[/bold green]")
+
+    if platform.system().lower().startswith("win"):
+        py_cmd = r".\.venv\Scripts\python.exe"
+        console.print("\nSiguiente (Windows):")
+        console.print(f"- Gateway consola: [bold]{py_cmd} gateway.py[/bold]")
+        console.print(f"- Gateway web:    [bold]{py_cmd} web_ui.py[/bold]")
+    else:
+        py_cmd = "./.venv/bin/python" if (project_root / ".venv" / "bin" / "python").exists() else "python"
+        console.print("\nSiguiente:")
+        console.print(f"- Gateway consola: [bold]{py_cmd} gateway.py[/bold]")
+        console.print(f"- Gateway web:    [bold]{py_cmd} web_ui.py[/bold]")
+
+    console.print(f"\nWeb UI por defecto: [bold]http://127.0.0.1:{DEFAULT_WEB_PORT}/[/bold]")
+    console.print("Tip: Cambia el puerto con `--port` o `PEANUT_WEB_PORT`.")
 
 
 if __name__ == "__main__":
-    run_wizard()
+    main()
