@@ -1,4 +1,4 @@
-# 🥜 PEANUT-AGENT — PRO v0.0.1
+# 🥜 PEANUT-AGENT — PRO v0.1
 
 **Agente autónomo _local-first_** optimizado para modelos pequeños (7B) en **Ollama**, diseñado para que un modelo “pequeño” se comporte como uno grande gracias a **arquitectura**, no magia.
 
