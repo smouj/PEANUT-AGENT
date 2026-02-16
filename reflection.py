@@ -1,216 +1,214 @@
-"""
-🥜 Peanut Reflection Loop (PRO)
---------------------------------
-Módulo de auto-corrección: audita el resultado de una herramienta y decide si reintentar.
-
-Diseño:
-- Pydantic para esquema estricto.
-- Robustez ante JSON "sucio" de modelos pequeños.
-- Fallback heurístico si Ollama no responde o el JSON no valida.
-
-Requisitos:
-- Ollama /api/chat disponible.
-"""
-
 from __future__ import annotations
 
 import json
-import re
+import os
+import time
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Dict, Literal, Optional
 
 import requests
 from pydantic import BaseModel, Field, ValidationError
 
 
 class PeanutReflection(BaseModel):
-    """Resultado estricto de la reflexión."""
-    success: bool = Field(..., description="¿La herramienta funcionó?")
-    analysis: str = Field(..., min_length=1, description="Crítica breve del resultado.")
-    peanuts_earned: int = Field(..., ge=0, le=1, description="1 si éxito, 0 si fallo.")
-    next_action: Literal["retry", "finalize"] = Field(..., description="Acción a tomar.")
-    improved_input: Optional[str] = Field(
-        default=None,
-        description="Si next_action=retry, propuesta de argumentos mejorados (idealmente JSON).",
-    )
+    """Resultado de reflexión tras ejecutar una herramienta."""
+
+    success: bool
+    analysis: str
+    peanuts_earned: int = Field(ge=0, le=1)
+    next_action: Literal["retry", "finalize"]
+    improved_input: Optional[str] = None
 
 
 @dataclass(frozen=True)
-class OllamaClient:
-    """Cliente mínimo para Ollama."""
-    ollama_url: str = "http://localhost:11434"
-    timeout_s: int = 60
-
-    def chat(self, model: str, messages: list[dict[str, Any]], temperature: float = 0.0) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {
-            "model": model,
-            "messages": messages,
-            "stream": False,
-            "options": {"temperature": float(temperature)},
-        }
-        resp = requests.post(f"{self.ollama_url}/api/chat", json=payload, timeout=self.timeout_s)
-        resp.raise_for_status()
-        return resp.json()
+class _OllamaCfg:
+    host: str
+    model: str
+    timeout_s: int
 
 
-_JSON_RE = re.compile(r"\{(?:[^{}]|(?R))*\}", re.DOTALL)
+def _cfg() -> _OllamaCfg:
+    host = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
+    model = os.environ.get("PEANUT_REFLECTION_MODEL", os.environ.get("PEANUT_MODEL", "qwen2.5:7b"))
+    timeout_s = int(os.environ.get("PEANUT_OLLAMA_TIMEOUT", "30"))
+    return _OllamaCfg(host=host, model=model, timeout_s=timeout_s)
 
 
-def _extract_json_object(text: str) -> Optional[str]:
-    """Intenta extraer el primer objeto JSON del texto."""
-    text = text.strip()
-    if text.startswith("{") and text.endswith("}"):
-        return text
-    m = _JSON_RE.search(text)
-    if not m:
+def _ollama_chat(messages: list[dict[str, Any]], *, model: str, host: str, timeout_s: int) -> str:
+    """Llama a Ollama /api/chat y devuelve el contenido de la respuesta (string)."""
+    url = f"{host}/api/chat"
+    payload: Dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        # Si tu Ollama soporta format=json ayuda a forzar JSON limpio.
+        "format": "json",
+        "options": {"temperature": 0.0},
+    }
+
+    r = requests.post(url, json=payload, timeout=timeout_s)
+    r.raise_for_status()
+    data = r.json()
+    msg = data.get("message") or {}
+    return str(msg.get("content", "")).strip()
+
+
+def _extract_first_json_object(text: str) -> Optional[str]:
+    """Extrae el primer objeto JSON {...} con llaves balanceadas, ignorando strings.
+
+    Evita regex recursiva (Python re NO soporta (?R)).
+    """
+    if not text:
         return None
-    return m.group(0)
+
+    start = text.find("{")
+    if start == -1:
+        return None
+
+    in_str = False
+    esc = False
+    depth = 0
+    begin = None
+
+    for i in range(start, len(text)):
+        ch = text[i]
+
+        if in_str:
+            if esc:
+                esc = False
+                continue
+            if ch == "\\":
+                esc = True
+                continue
+            if ch == '"':
+                in_str = False
+            continue
+
+        # fuera de string
+        if ch == '"':
+            in_str = True
+            continue
+
+        if ch == "{":
+            if depth == 0:
+                begin = i
+            depth += 1
+            continue
+
+        if ch == "}":
+            if depth > 0:
+                depth -= 1
+                if depth == 0 and begin is not None:
+                    candidate = text[begin : i + 1].strip()
+                    # Validación rápida: ¿es JSON parseable?
+                    try:
+                        json.loads(candidate)
+                        return candidate
+                    except json.JSONDecodeError:
+                        # seguimos buscando otro objeto posible
+                        begin = None
+                        continue
+
+    return None
 
 
-def _heuristic_reflection(tool_output: Any) -> PeanutReflection:
-    """Fallback robusto cuando el modelo no puede auditar."""
-    # Señales comunes de error
-    as_text = ""
+def _parse_reflection_json(raw: str) -> Optional[PeanutReflection]:
+    """Intenta parsear el JSON estricto o extraído de un texto sucio."""
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+
+    # 1) intento directo
     try:
-        as_text = json.dumps(tool_output, ensure_ascii=False)
+        return PeanutReflection.model_validate_json(raw)
     except Exception:
-        as_text = str(tool_output)
+        pass
 
-    lowered = as_text.lower()
-    looks_error = any(k in lowered for k in ["error", "exception", "traceback"])  # amplia a propósito
+    # 2) extraer primer objeto JSON
+    candidate = _extract_first_json_object(raw)
+    if not candidate:
+        return None
 
-    # Si hay estructura típica: {"success": False} o returncode != 0
-    if isinstance(tool_output, dict):
-        if tool_output.get("success") is False:
-            looks_error = True
-        rc = tool_output.get("returncode")
-        if isinstance(rc, int) and rc != 0:
-            looks_error = True
+    try:
+        return PeanutReflection.model_validate_json(candidate)
+    except ValidationError:
+        return None
+    except Exception:
+        return None
 
-    if looks_error:
+
+def reflect_on_result(tool_name: str, user_input: str, tool_output: str) -> PeanutReflection:
+    """Genera una reflexión (audit) sobre el resultado de una herramienta.
+
+    - Si Ollama está disponible: pide JSON estricto y lo valida con Pydantic.
+    - Si Ollama NO está disponible: devuelve un fallback útil (no rompe el gateway).
+    """
+    tool_name = str(tool_name or "").strip() or "unknown_tool"
+    user_input = str(user_input or "")
+    tool_output = str(tool_output or "")
+
+    cfg = _cfg()
+
+    system = (
+        "Eres un auditor de calidad extremadamente estricto.\n"
+        "Tu tarea: evaluar si la ejecución de una herramienta fue exitosa.\n"
+        "Responde SIEMPRE en JSON válido que cumpla EXACTAMENTE este esquema:\n"
+        "{\n"
+        '  "success": true|false,\n'
+        '  "analysis": "string (breve)",\n'
+        '  "peanuts_earned": 0|1,\n'
+        '  "next_action": "retry"|"finalize",\n'
+        '  "improved_input": "string opcional"\n'
+        "}\n"
+        "Reglas:\n"
+        "- Si el output contiene error, está vacío o es inútil => success=false, peanuts_earned=0, next_action=retry.\n"
+        '- improved_input debe sugerir un ajuste concreto (idealmente parámetros JSON) para reintentar.\n'
+        "- Si es correcto => success=true, peanuts_earned=1, next_action=finalize.\n"
+        "NO incluyas texto fuera del JSON."
+    )
+
+    user = (
+        f"Herramienta: {tool_name}\n\n"
+        f"Input del usuario:\n{user_input}\n\n"
+        f"Output de la herramienta:\n{tool_output}\n"
+    )
+
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+    # Intento con Ollama
+    try:
+        raw = _ollama_chat(messages, model=cfg.model, host=cfg.host, timeout_s=cfg.timeout_s)
+        parsed = _parse_reflection_json(raw)
+        if parsed:
+            # Normalización mínima
+            if parsed.success:
+                parsed.peanuts_earned = 1
+                parsed.next_action = "finalize"
+                parsed.improved_input = None
+            else:
+                parsed.peanuts_earned = 0
+                if not parsed.improved_input:
+                    parsed.improved_input = user_input
+            return parsed
+
+        # Si Ollama respondió algo no parseable, fallback
         return PeanutReflection(
             success=False,
-            analysis="El output parece contener un error o un fallo de ejecución. Propón ajustar argumentos o simplificar la llamada.",
+            analysis="Respuesta de reflexión no fue JSON válido. Se sugiere reintentar con input más simple.",
             peanuts_earned=0,
             next_action="retry",
+            improved_input=user_input,
+        )
+
+    except requests.RequestException as e:
+        # Ollama no disponible / conexión rechazada
+        return PeanutReflection(
+            success=False,
+            analysis=f"Ollama no disponible para reflexión ({e.__class__.__name__}). El gateway puede iniciar igualmente.",
+            peanuts_earned=0,
+            next_action="finalize",
             improved_input=None,
         )
-
-    # No parece error
-    return PeanutReflection(
-        success=True,
-        analysis="El output parece válido y útil para la tarea.",
-        peanuts_earned=1,
-        next_action="finalize",
-        improved_input=None,
-    )
-
-
-def reflect_on_result(
-    tool_name: str,
-    user_input: str,
-    tool_output: Any,
-    *,
-    model: str = "qwen2.5:7b",
-    ollama_url: str = "http://localhost:11434",
-    temperature: float = 0.0,
-    timeout_s: int = 60,
-    max_output_chars: int = 6000,
-) -> PeanutReflection:
-    """
-    Audita un tool call y decide si reintentar.
-
-    Args:
-        tool_name: Nombre de la herramienta.
-        user_input: Entrada del usuario (tarea).
-        tool_output: Output retornado por la herramienta (dict/str).
-        model: Modelo para reflexión (pequeño pero con instrucciones estrictas).
-        ollama_url: URL base de Ollama.
-        temperature: Temperatura (recomendado 0.0).
-        timeout_s: Timeout para la llamada.
-        max_output_chars: Recorte defensivo para no meter megas al prompt.
-
-    Returns:
-        PeanutReflection validado por Pydantic.
-    """
-    # Preparación segura del contexto
-    try:
-        tool_output_text = json.dumps(tool_output, ensure_ascii=False)
-    except Exception:
-        tool_output_text = str(tool_output)
-
-    if len(tool_output_text) > max_output_chars:
-        tool_output_text = tool_output_text[:max_output_chars] + "…(truncado)"
-
-    system_prompt = (
-        "Eres un auditor de calidad extremadamente estricto.\n"
-        "Reglas:\n"
-        "- Responde SOLO con un objeto JSON válido (sin markdown, sin texto extra).\n"
-        "- Si el output es un error, está vacío, no tiene datos útiles, o no cumple la tarea: success=false.\n"
-        "- Si success=false, next_action debe ser \"retry\" y sugiere improved_input (idealmente JSON de argumentos).\n"
-        "- Si success=true, next_action debe ser \"finalize\" y peanuts_earned=1.\n"
-        "- peanuts_earned: 1 si success=true, 0 si success=false.\n"
-        "Esquema EXACTO:\n"
-        "{"
-        "\"success\": bool, "
-        "\"analysis\": str, "
-        "\"peanuts_earned\": 0|1, "
-        "\"next_action\": \"retry\"|\"finalize\", "
-        "\"improved_input\": str|null"
-        "}"
-    )
-
-    user_msg = (
-        f"HERRAMIENTA: {tool_name}\n"
-        f"TAREA_USUARIO: {user_input}\n"
-        f"OUTPUT_HERRAMIENTA: {tool_output_text}\n\n"
-        "Evalúa si resolvió la tarea del usuario. Devuelve SOLO JSON."
-    )
-
-    client = OllamaClient(ollama_url=ollama_url, timeout_s=timeout_s)
-
-    try:
-        resp = client.chat(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_msg},
-            ],
-            temperature=temperature,
-        )
-        content = (resp.get("message") or {}).get("content") or ""
-        raw_json = _extract_json_object(content) or ""
-        if not raw_json:
-            return _heuristic_reflection(tool_output)
-
-        try:
-            data = json.loads(raw_json)
-        except json.JSONDecodeError:
-            # Segundo intento: limpiar comillas raras / trailing
-            cleaned = raw_json.strip()
-            cleaned = cleaned.replace("\u201c", '"').replace("\u201d", '"').replace("\u2019", "'")
-            try:
-                data = json.loads(cleaned)
-            except json.JSONDecodeError:
-                return _heuristic_reflection(tool_output)
-
-        try:
-            refl = PeanutReflection.model_validate(data)
-        except ValidationError:
-            return _heuristic_reflection(tool_output)
-
-        # Normalizaciones defensivas
-        if refl.success:
-            refl.peanuts_earned = 1
-            refl.next_action = "finalize"
-            refl.improved_input = None
-        else:
-            refl.peanuts_earned = 0
-            refl.next_action = "retry"
-            if refl.improved_input is not None and not refl.improved_input.strip():
-                refl.improved_input = None
-
-        return refl
-
-    except (requests.RequestException, ValueError):
-        return _heuristic_reflection(tool_output)
