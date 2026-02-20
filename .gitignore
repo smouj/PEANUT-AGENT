@@ -1,3 +1,16 @@
+# Node.js
+node_modules/
+coverage/
+.next/
+dist/
+*.tsbuildinfo
+
+# Database files (runtime data)
+data/
+*.db
+*.db-wal
+*.db-shm
+
 # Python
 __pycache__/
 *.py[cod]

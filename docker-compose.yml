@@ -1,25 +1,75 @@
-version: "3.8"
+version: '3.9'
 
 services:
+  # API Gateway (OpenClaw Orchestrator)
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: peanut-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-3001}:3001"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3001
+      HOST: 0.0.0.0
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      KILO_ENCRYPTION_KEY: ${KILO_ENCRYPTION_KEY:?KILO_ENCRYPTION_KEY is required}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      DATA_DIR: /data
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-PeanutAdmin@2024!}
+    volumes:
+      - gateway_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - peanut-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # Admin Dashboard (Next.js 15)
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    container_name: peanut-dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3001}
+      GATEWAY_URL: http://gateway:3001
+    depends_on:
+      gateway:
+        condition: service_healthy
+    networks:
+      - peanut-net
+
+  # Ollama (Local LLM Engine)
   ollama:
     image: ollama/ollama:latest
     container_name: peanut-ollama
+    restart: unless-stopped
     ports:
-      - "11434:11434"
+      - "${OLLAMA_PORT:-11434}:11434"
     volumes:
       - ollama_data:/root/.ollama
-    restart: unless-stopped
-
-  peanut-gateway:
-    build: .
-    container_name: peanut-gateway
-    environment:
-      - OLLAMA_URL=http://ollama:11434
-    ports:
-      - "18789:18789"
-    depends_on:
-      - ollama
-    restart: unless-stopped
+    networks:
+      - peanut-net
 
 volumes:
+  gateway_data:
+    driver: local
   ollama_data:
+    driver: local
+
+networks:
+  peanut-net:
+    driver: bridge
