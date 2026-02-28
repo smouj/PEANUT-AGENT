@@ -84,6 +84,40 @@ OpenClaw Orchestrator implements **Smooth Weighted Round-Robin** (Nginx algorith
 
 ---
 
+## 📸 Dashboard Screenshots
+
+> **New Enterprise Dashboard** — Redesigned with glassmorphism, neon effects, animated metrics, and a cyberpunk-inspired dark theme.
+
+<div align="center">
+
+### 🖥️ Main Dashboard
+<img src="docs/screenshots/04-dashboard-1920.png" alt="PeanutAgent Enterprise Dashboard" width="100%"/>
+
+<br/>
+
+### 🔐 Login Page
+<img src="docs/screenshots/05-login-1920.png" alt="PeanutAgent Login" width="60%"/>
+
+<br/>
+
+### 📊 Dashboard Overview (1440px)
+<img src="docs/screenshots/02-dashboard.png" alt="PeanutAgent Dashboard Overview" width="100%"/>
+
+</div>
+
+**Dashboard Features:**
+- 🌑 **Dark glassmorphism** design with backdrop blur effects
+- ✨ **Animated stat cards** with sparkline charts and live counters
+- 🟢 **Real-time status indicators** with neon glow effects
+- 📈 **System metrics** with animated progress bars
+- ⚡ **Quick actions** panel for instant navigation
+- 🔒 **Platform overview** with security status
+- 🤖 **Agent list** with health monitoring and latency display
+- 🐳 **Docker containers** panel with live status
+- 🎨 **Cyber grid background** with ambient glow effects
+
+---
+
 ## 🏗️ Architecture
 
 ```
