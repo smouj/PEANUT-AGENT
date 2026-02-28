@@ -43,3 +43,53 @@ export interface KiloConnectionStatus {
   readonly usage?: KiloUsage;
   readonly lastCheckedAt: string;
 }
+
+// ─── MCP (Model Context Protocol) Types ───────────────────────────────────
+
+export interface McpServerInfo {
+  readonly name: string;
+  readonly version: string;
+  readonly description: string;
+  readonly protocolVersion: string;
+  readonly capabilities: {
+    readonly tools: { readonly listChanged: boolean };
+    readonly resources: { readonly subscribe: boolean; readonly listChanged: boolean };
+    readonly prompts: { readonly listChanged: boolean };
+    readonly logging: Record<string, unknown>;
+  };
+}
+
+export interface McpTool {
+  readonly name: string;
+  readonly description: string;
+  readonly inputSchema: {
+    readonly type: 'object';
+    readonly properties: Record<string, unknown>;
+    readonly required?: readonly string[];
+  };
+}
+
+export interface McpResource {
+  readonly uri: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly mimeType?: string;
+}
+
+export interface McpPrompt {
+  readonly name: string;
+  readonly description?: string;
+  readonly arguments?: ReadonlyArray<{
+    readonly name: string;
+    readonly description?: string;
+    readonly required?: boolean;
+  }>;
+}
+
+export interface McpToolCallResult {
+  readonly content: ReadonlyArray<{
+    readonly type: string;
+    readonly text: string;
+  }>;
+  readonly isError?: boolean;
+}

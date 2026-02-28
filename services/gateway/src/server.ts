@@ -21,6 +21,7 @@ import { agentsRoutes } from './interfaces/http/routes/agents.routes.js';
 import { auditRoutes } from './interfaces/http/routes/audit.routes.js';
 import { dockerRoutes } from './interfaces/http/routes/docker.routes.js';
 import { kiloRoutes } from './interfaces/http/routes/kilo.routes.js';
+import { mcpRoutes } from './infrastructure/mcp/mcp.server.js';
 import { handleTerminalConnection } from './interfaces/ws/terminal.handler.js';
 import { DomainError } from './domain/errors.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
@@ -128,10 +129,13 @@ async function buildApp() {
   fastify.get('/health', async (_req, reply) => {
     return reply.send({
       status: 'healthy',
-      version: '1.0.0',
+      version: '2.0.0',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
-      services: { database: { status: 'healthy' } },
+      services: {
+        database: { status: 'healthy' },
+        mcp: { status: 'active', endpoint: '/mcp' },
+      },
     });
   });
 
@@ -145,6 +149,10 @@ async function buildApp() {
     await dockerRoutes(app, { dockerService });
     await kiloRoutes(app, { kiloClient, rateLimit });
   }, { prefix: API_PREFIX });
+
+  // MCP Server — KiloCode Model Context Protocol integration
+  // Accessible at /mcp (no auth required for discovery, tools require valid context)
+  await mcpRoutes(fastify, { openclaw, kiloClient, dockerService, auditService });
 
   // WebSocket terminal
   fastify.register(async (app) => {

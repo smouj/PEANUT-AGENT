@@ -16,8 +16,17 @@ const NAV_ITEMS = [
   { href: '/dashboard/docker', icon: Container, label: 'Docker' },
   { href: '/dashboard/audit', icon: ScrollText, label: 'Audit Log' },
   { href: '/dashboard/terminal', icon: Terminal, label: 'Terminal' },
+  { href: '/dashboard/kilocode', icon: Zap, label: 'KiloCode MCP', badge: 'NEW' },
   { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];
+
+interface NavItem {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  exact?: boolean;
+  badge?: string;
+}
 
 interface SidebarProps {
   userEmail: string;
@@ -60,7 +69,7 @@ export function Sidebar({ userEmail, userRole }: SidebarProps): React.JSX.Elemen
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {(NAV_ITEMS as NavItem[]).map((item) => {
           const isActive = item.exact
             ? pathname === item.href
             : pathname.startsWith(item.href);
@@ -78,6 +87,11 @@ export function Sidebar({ userEmail, userRole }: SidebarProps): React.JSX.Elemen
             >
               <item.icon className="h-4 w-4 shrink-0" />
               <span className="flex-1">{item.label}</span>
+              {item.badge && (
+                <span className="text-[10px] bg-peanut-400/20 text-peanut-400 px-1.5 py-0.5 rounded font-medium">
+                  {item.badge}
+                </span>
+              )}
               {isActive && <ChevronRight className="h-3 w-3" />}
             </Link>
           );
