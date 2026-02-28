@@ -1,8 +1,19 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons/peanut.svg" width="80" alt="PeanutAgent Logo" />
+<!-- Banner -->
+<img src="assets/banner.svg" alt="PeanutAgent Enterprise — Plataforma de Gateway de IA" width="100%"/>
 
-# 🥜 PeanutAgent Enterprise
+<br/>
+
+<!-- Logo -->
+<img src="assets/logo.svg" alt="PeanutAgent Logo" width="380"/>
+
+<br/><br/>
+
+<!-- Icon -->
+<img src="assets/icon.svg" alt="PeanutAgent Icono" width="64"/>
+
+<br/>
 
 ### Plataforma de Gateway de IA · Local-First · MCP Nativo · Grado Empresarial
 
@@ -26,8 +37,8 @@
 
 <br/>
 
-> **El compañero perfecto para KiloCode** — Un Gateway de IA listo para producción con servidor MCP nativo,  
-> inferencia local con Ollama, gestión de Docker y seguridad de grado empresarial.  
+> **El compañero perfecto para KiloCode** — Un Gateway de IA listo para producción con servidor MCP nativo,
+> inferencia local con Ollama, gestión de Docker y seguridad de grado empresarial.
 > **Cero costos de API. Privacidad total. Corre completamente en tu máquina.**
 
 <br/>
