@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="PeanutAgent Enterprise — Local-First AI Gateway with MCP Server, Ollama integration, Docker management, and enterprise security. The perfect KiloCode companion." />
+  <meta name="keywords" content="AI Gateway, MCP Server, KiloCode, Ollama, Local LLM, Docker, TypeScript, Next.js, Fastify" />
+  <meta property="og:title" content="🥜 PeanutAgent Enterprise — AI Gateway Platform" />
+  <meta property="og:description" content="Local-First AI Gateway with native MCP Server for KiloCode. Zero API costs. Full privacy. Runs entirely on your machine." />
+  <meta property="og:type" content="website" />
+  <title>🥜 PeanutAgent Enterprise — AI Gateway Platform</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0a0a0f;
+      --bg-card:     #111118;
+      --bg-card2:    #16161f;
+      --border:      rgba(255,255,255,0.07);
+      --border-glow: rgba(245,166,35,0.35);
+      --text:        #e8e8f0;
+      --text-muted:  #8888a8;
+      --text-dim:    #555570;
+      --accent:      #f5a623;
+      --accent2:     #ff6b35;
+      --green:       #22c55e;
+      --blue:        #3b82f6;
+      --purple:      #a855f7;
+      --cyan:        #06b6d4;
+      --radius:      12px;
+      --radius-lg:   20px;
+      --shadow:      0 4px 32px rgba(0,0,0,0.5);
+      --shadow-glow: 0 0 40px rgba(245,166,35,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ─── Scrollbar ─────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ─── Noise texture overlay ─────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Nav ───────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 60px;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #000 !important;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      font-weight: 600 !important;
+      transition: opacity 0.2s !important;
+    }
+
+    .nav-cta:hover { opacity: 0.85; }
+
+    /* ─── Hero ──────────────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      overflow: hidden;
+    }
+
+    /* Radial gradient background */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse at center, rgba(245,166,35,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Grid lines */
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 100%);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(245,166,35,0.1);
+      border: 1px solid rgba(245,166,35,0.25);
+      color: var(--accent);
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 .emoji { font-size: 0.9em; }
+
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-sub strong { color: var(--text); }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 3rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background: #e8961f;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(245,166,35,0.3);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.04);
+      transform: translateY(-1px);
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 0.25rem;
+    }
+
+    /* ─── Section ───────────────────────────────────────────────────────── */
+    section {
+      padding: 5rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+
+    /* ─── Feature Grid ──────────────────────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(245,166,35,0.3), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(245,166,35,0.2);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .feature-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .feature-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .feature-tag {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      background: rgba(34,197,94,0.1);
+      color: var(--green);
+      border: 1px solid rgba(34,197,94,0.2);
+    }
+
+    /* ─── Architecture ──────────────────────────────────────────────────── */
+    .arch-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      margin-top: 3rem;
+    }
+
+    .arch-diagram {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+      padding: 1.5rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .arch-diagram .hl { color: var(--accent); }
+    .arch-diagram .hl2 { color: var(--green); }
+    .arch-diagram .hl3 { color: var(--blue); }
+
+    /* ─── MCP Tools ─────────────────────────────────────────────────────── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+
+    .tool-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      transition: all 0.2s;
+    }
+
+    .tool-card:hover {
+      border-color: rgba(59,130,246,0.3);
+      background: var(--bg-card2);
+    }
+
+    .tool-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.2);
+    }
+
+    .tool-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 0.25rem;
+    }
+
+    .tool-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ─── Code Block ────────────────────────────────────────────────────── */
+    .code-block {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 1.5rem;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .code-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .code-dots span:nth-child(1) { background: #ff5f57; }
+    .code-dots span:nth-child(2) { background: #febc2e; }
+    .code-dots span:nth-child(3) { background: #28c840; }
+
+    .code-lang {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+      overflow-x: auto;
+    }
+
+    .code-body .kw { color: #c792ea; }
+    .code-body .str { color: #c3e88d; }
+    .code-body .fn { color: #82aaff; }
+    .code-body .cm { color: #546e7a; font-style: italic; }
+    .code-body .num { color: #f78c6c; }
+    .code-body .prop { color: var(--accent); }
+
+    /* ─── Security Grid ─────────────────────────────────────────────────── */
+    .security-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+
+    .security-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      border-left: 3px solid var(--green);
+    }
+
+    .security-item h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      color: var(--text);
+    }
+
+    .security-item p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ─── Stack Table ───────────────────────────────────────────────────── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin-top: 2.5rem;
+    }
+
+    .stack-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: border-color 0.2s;
+    }
+
+    .stack-item:hover { border-color: rgba(255,255,255,0.15); }
+
+    .stack-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .stack-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .stack-ver {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      margin-left: auto;
+    }
+
+    /* ─── Quick Start ───────────────────────────────────────────────────── */
+    .quickstart-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2.5rem;
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      position: relative;
+    }
+
+    .step-num {
+      position: absolute;
+      top: -14px;
+      left: 1.5rem;
+      background: var(--accent);
+      color: #000;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.2rem 0.6rem;
+      border-radius: 100px;
+      letter-spacing: 0.05em;
+    }
+
+    .step-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .step-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .step-code {
+      margin-top: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--green);
+      background: rgba(0,0,0,0.3);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    /* ─── CTA ───────────────────────────────────────────────────────────── */
+    .cta-section {
+      text-align: center;
+      padding: 6rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(245,166,35,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-section p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── Footer ────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .footer-logo span { color: var(--accent); }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text-muted); }
+
+    .footer-copy {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    /* ─── Badges Row ────────────────────────────────────────────────────── */
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      border: 1px solid;
+    }
+
+    .badge-ts   { background: rgba(49,120,198,0.1); color: #60a5fa; border-color: rgba(49,120,198,0.25); }
+    .badge-next { background: rgba(255,255,255,0.05); color: #e2e8f0; border-color: rgba(255,255,255,0.1); }
+    .badge-mcp  { background: rgba(34,197,94,0.1); color: #4ade80; border-color: rgba(34,197,94,0.25); }
+    .badge-mit  { background: rgba(168,85,247,0.1); color: #c084fc; border-color: rgba(168,85,247,0.25); }
+    .badge-cov  { background: rgba(34,197,94,0.1); color: #4ade80; border-color: rgba(34,197,94,0.25); }
+    .badge-py   { background: rgba(55,118,171,0.1); color: #93c5fd; border-color: rgba(55,118,171,0.25); }
+
+    /* ─── Divider ───────────────────────────────────────────────────────── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    /* ─── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+      section { padding: 3.5rem 1.25rem; }
+      .hero { padding: 5rem 1.25rem 3rem; }
+      .hero-stats { gap: 1.5rem; }
+      .footer-inner { flex-direction: column; align-items: center; text-align: center; }
+    }
+
+    /* ─── Animations ────────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-up {
+      animation: fadeUp 0.6s ease forwards;
+    }
+
+    .fade-up-delay-1 { animation-delay: 0.1s; opacity: 0; }
+    .fade-up-delay-2 { animation-delay: 0.2s; opacity: 0; }
+    .fade-up-delay-3 { animation-delay: 0.3s; opacity: 0; }
+    .fade-up-delay-4 { animation-delay: 0.4s; opacity: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Navigation ──────────────────────────────────────────────────── -->
+  <nav>
+    <a href="#" class="nav-logo">🥜 <span>Peanut</span>Agent</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#kilocode">KiloCode</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#quickstart">Quick Start</a></li>
+      <li><a href="https://github.com/your-org/peanut-agent" class="nav-cta">GitHub →</a></li>
+    </ul>
+  </nav>
+
+  <!-- ─── Hero ────────────────────────────────────────────────────────── -->
+  <div class="hero">
+    <div class="hero-grid"></div>
+
+    <div class="hero-badge fade-up">
+      v2.0.0 · MCP Native · KiloCode Ready
+    </div>
+
+    <h1 class="fade-up fade-up-delay-1">
+      <span class="emoji">🥜</span> PeanutAgent<br/>
+      <span class="gradient">Enterprise</span>
+    </h1>
+
+    <p class="hero-sub fade-up fade-up-delay-2">
+      A <strong>production-ready AI Gateway</strong> with native MCP Server, Ollama local inference,
+      Docker management, and enterprise-grade security.<br/>
+      <strong>Zero API costs. Full privacy. Runs on your machine.</strong>
+    </p>
+
+    <div class="badges fade-up fade-up-delay-2">
+      <span class="badge badge-ts">TypeScript 5.7</span>
+      <span class="badge badge-next">Next.js 15</span>
+      <span class="badge badge-mcp">MCP 2024-11-05</span>
+      <span class="badge badge-py">Python 3.10+</span>
+      <span class="badge badge-cov">80% Coverage</span>
+      <span class="badge badge-mit">MIT License</span>
+    </div>
+
+    <div class="hero-actions fade-up fade-up-delay-3">
+      <a href="#quickstart" class="btn btn-primary">
+        🚀 Get Started
+      </a>
+      <a href="https://github.com/your-org/peanut-agent" class="btn btn-secondary">
+        ⭐ Star on GitHub
+      </a>
+      <a href="../README.md" class="btn btn-secondary">
+        📖 Documentation
+      </a>
+    </div>
+
+    <div class="hero-stats fade-up fade-up-delay-4">
+      <div class="stat">
+        <div class="stat-value">7</div>
+        <div class="stat-label">MCP Tools</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">80%+</div>
+        <div class="stat-label">Test Coverage</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">0</div>
+        <div class="stat-label">API Costs</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">AES-256</div>
+        <div class="stat-label">Encryption</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">DDD</div>
+        <div class="stat-label">Architecture</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ─── Features ────────────────────────────────────────────────────── -->
+  <section id="features">
+    <span class="section-label">Core Features</span>
+    <h2 class="section-title">Everything you need for<br/>local AI development</h2>
+    <p class="section-desc">PeanutAgent bridges local LLMs with enterprise-grade tooling — all running on your machine.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🔌</span>
+        <div class="feature-title">MCP Server (v2.0.0)</div>
+        <div class="feature-desc">Full Model Context Protocol server at <code>/mcp</code>. KiloCode discovers and uses your local Ollama models as native tools. 7 tools, 4 resources, 2 prompts — spec-compliant.</div>
+        <span class="feature-tag">New in v2.0.0</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🤖</span>
+        <div class="feature-title">Local AI Backend</div>
+        <div class="feature-desc">Use PeanutAgent as a free, private AI backend for KiloCode. Supports qwen2.5, llama3.2, codellama, and any Ollama model. No data leaves your machine.</div>
+        <span class="feature-tag">Zero API Costs</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🐳</span>
+        <div class="feature-title">Docker Management</div>
+        <div class="feature-desc">Manage containers directly from KiloCode via MCP tools. List, start, stop, inspect, and stream logs — all from your IDE without switching context.</div>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🔒</span>
+        <div class="feature-title">Enterprise Security</div>
+        <div class="feature-desc">JWT httpOnly cookies, TOTP 2FA (RFC 6238), scrypt password hashing, AES-256-GCM encrypted secrets, and an immutable SHA-256 audit chain.</div>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <div class="feature-title">Admin Dashboard</div>
+        <div class="feature-desc">Next.js 15 dashboard with real-time metrics, agent management, Docker control, WebSocket terminal, and a dedicated KiloCode MCP integration page.</div>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">⚖️</span>
+        <div class="feature-title">Smart Load Balancing</div>
+        <div class="feature-desc">OpenClaw Orchestrator implements Smooth Weighted Round-Robin (Nginx algorithm) with health-based routing, per-agent metrics, and 30s health checks.</div>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🧠</span>
+        <div class="feature-title">RAG Memory System</div>
+        <div class="feature-desc">Python agent with JSONL append-only memory store, Ollama embeddings, and cosine similarity retrieval. Learns from past successful interactions.</div>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🔄</span>
+        <div class="feature-title">Reflection Loop</div>
+        <div class="feature-desc">Auto-correction system with Pydantic schema validation. Up to 3 retries with improved inputs. Heuristic fallback for malformed JSON responses.</div>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">📡</span>
+        <div class="feature-title">OpenTelemetry</div>
+        <div class="feature-desc">Full distributed tracing with OTEL SDK. Auto-instrumented Node.js with OTLP HTTP exporter. Trace every MCP call, agent dispatch, and Docker operation.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ─── KiloCode Integration ─────────────────────────────────────────── -->
+  <section id="kilocode">
+    <span class="section-label">KiloCode Integration</span>
+    <h2 class="section-title">Connect in 30 seconds.<br/>Use local AI for free.</h2>
+    <p class="section-desc">PeanutAgent v2.0.0 ships a full MCP server that KiloCode discovers natively. Free, private AI inference directly in your IDE.</p>
+
+    <div class="code-block" style="margin-top: 2.5rem;">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <span class="code-lang">~/.kilo/mcp_settings.json</span>
+      </div>
+      <div class="code-body"><span class="kw">{</span>
+  <span class="prop">"mcpServers"</span>: <span class="kw">{</span>
+    <span class="prop">"peanut-agent"</span>: <span class="kw">{</span>
+      <span class="prop">"url"</span>: <span class="str">"http://localhost:3001/mcp"</span>,
+      <span class="prop">"description"</span>: <span class="str">"PeanutAgent Enterprise — Local AI Gateway"</span>
+    <span class="kw">}</span>
+  <span class="kw">}</span>
+<span class="kw">}</span></div>
+    </div>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-icon">🤖</div>
+        <div>
+          <div class="tool-name">peanut_dispatch_agent</div>
+          <div class="tool-desc">Send tasks to local Ollama agents — free, private inference with zero API costs</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">📋</div>
+        <div>
+          <div class="tool-name">peanut_list_agents</div>
+          <div class="tool-desc">Discover available local AI agents with health status and model info</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">🐳</div>
+        <div>
+          <div class="tool-name">peanut_docker_list</div>
+          <div class="tool-desc">List Docker containers with real-time status and resource metrics</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">⚡</div>
+        <div>
+          <div class="tool-name">peanut_docker_control</div>
+          <div class="tool-desc">Start, stop, or restart Docker containers directly from KiloCode</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">📜</div>
+        <div>
+          <div class="tool-name">peanut_docker_logs</div>
+          <div class="tool-desc">Retrieve container logs for debugging — tail N lines or stream live</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">💚</div>
+        <div>
+          <div class="tool-name">peanut_gateway_status</div>
+          <div class="tool-desc">Check PeanutAgent gateway health, version, and MCP service status</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">🔗</div>
+        <div>
+          <div class="tool-name">peanut_kilo_complete</div>
+          <div class="tool-desc">Proxy completions through PeanutAgent to Kilo Code API with encrypted key</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ─── Architecture ─────────────────────────────────────────────────── -->
+  <section id="architecture">
+    <span class="section-label">Architecture</span>
+    <h2 class="section-title">Domain-Driven Design.<br/>Four clean layers.</h2>
+    <p class="section-desc">The gateway follows strict DDD principles. Pure domain entities, isolated application services, and clean infrastructure adapters.</p>
+
+    <div class="arch-section">
+      <div class="arch-diagram">╔══════════════════════════════════════════════════════════════════════╗
+║              <span class="hl">PeanutAgent Enterprise v2.0.0</span>                          ║
+╠══════════════════════╦═══════════════════════════════════════════════╣
+║  <span class="hl3">Next.js 15 Dashboard</span>  ║       <span class="hl3">Fastify API Gateway</span>                    ║
+║  (Port 3000)         ║       (Port 3001)                             ║
+║  ─────────────────   ║  ──────────────────────────────              ║
+║  • Auth (2FA TOTP)   ║  • OpenClaw Orchestrator (SWRR)              ║
+║  • Agent Management  ║  • JWT Auth (httpOnly cookies)               ║
+║  • Docker Control    ║  • Immutable Audit Chain (SHA-256)           ║
+║  • Audit Log Viewer  ║  • Adaptive Rate Limiting                    ║
+║  • WS Terminal       ║  • Docker Management API                     ║
+║  • <span class="hl">KiloCode MCP Page</span>  ║  • Kilo Code Bridge (AES-256-GCM)            ║
+║                      ║  • <span class="hl">MCP Server (7 tools, 4 resources)</span>        ║
+╠══════════════════════╩═══════════════════════════════════════════════╣
+║              <span class="hl2">Data & Infrastructure</span>                                  ║
+║  SQLite (WAL) │ Ollama LLM │ Docker Socket │ OpenTelemetry          ║
+╚══════════════════════════════════════════════════════════════════════╝
+                         ↕ MCP Protocol (2024-11-05)
+╔══════════════════════════════════════════════════════════════════════╗
+║                      <span class="hl">KiloCode IDE</span>                                   ║
+║  peanut_dispatch_agent · peanut_docker_* · peanut_list_agents       ║
+╚══════════════════════════════════════════════════════════════════════╝</div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ─── Security ─────────────────────────────────────────────────────── -->
+  <section id="security">
+    <span class="section-label">Security</span>
+    <h2 class="section-title">Enterprise-grade security.<br/>Zero compromises.</h2>
+    <p class="section-desc">Every layer is hardened. From authentication to audit trails, PeanutAgent is built for production.</p>
+
+    <div class="security-grid">
+      <div class="security-item">
+        <h4>🔑 JWT Sessions</h4>
+        <p>httpOnly, Secure, SameSite=Strict cookies. 8-hour expiry. Revokable sessions stored in SQLite.</p>
+      </div>
+      <div class="security-item">
+        <h4>📱 TOTP 2FA</h4>
+        <p>RFC 6238 via otplib. 10 single-use backup codes. Per-user rate limiting with exponential backoff.</p>
+      </div>
+      <div class="security-item">
+        <h4>🔐 Password Hashing</h4>
+        <p>scrypt (N=2¹⁴, r=8, p=1). 64-byte output with random 32-byte salt. Industry-standard parameters.</p>
+      </div>
+      <div class="security-item">
+        <h4>🔒 AES-256-GCM</h4>
+        <p>API keys encrypted at rest. Encryption key stored in env, never in database. Keys never exposed to frontend.</p>
+      </div>
+      <div class="security-item">
+        <h4>⛓️ Audit Chain</h4>
+        <p>Immutable SHA-256 fingerprint chain. Each entry links to previous. Any modification breaks the chain — tamper detection is automatic.</p>
+      </div>
+      <div class="security-item">
+        <h4>🛡️ Security Headers</h4>
+        <p>@fastify/helmet with HSTS, CSP, X-Frame-Options. CORS with configurable origins. SameSite=Strict cookies.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ─── Tech Stack ────────────────────────────────────────────────────── -->
+  <section id="stack">
+    <span class="section-label">Tech Stack</span>
+    <h2 class="section-title">Modern. Typed. Tested.</h2>
+    <p class="section-desc">Built on the latest stable versions of the best tools in the ecosystem.</p>
+
+    <div class="stack-grid">
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#3178C6"></div>
+        <span class="stack-name">TypeScript</span>
+        <span class="stack-ver">5.7</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#000"></div>
+        <span class="stack-name">Next.js</span>
+        <span class="stack-ver">15.1</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#000"></div>
+        <span class="stack-name">Fastify</span>
+        <span class="stack-ver">4.x</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#61dafb"></div>
+        <span class="stack-name">React</span>
+        <span class="stack-ver">19.x</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#003B57"></div>
+        <span class="stack-name">SQLite (WAL)</span>
+        <span class="stack-ver">11.x</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#22c55e"></div>
+        <span class="stack-name">MCP Protocol</span>
+        <span class="stack-ver">2024-11-05</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#FF6B35"></div>
+        <span class="stack-name">Ollama</span>
+        <span class="stack-ver">Latest</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#3776AB"></div>
+        <span class="stack-name">Python</span>
+        <span class="stack-ver">3.10+</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#2496ED"></div>
+        <span class="stack-name">Docker</span>
+        <span class="stack-ver">Any</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#f59e0b"></div>
+        <span class="stack-name">Vitest</span>
+        <span class="stack-ver">3.x</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#06b6d4"></div>
+        <span class="stack-name">OpenTelemetry</span>
+        <span class="stack-ver">1.x</span>
+      </div>
+      <div class="stack-item">
+        <div class="stack-dot" style="background:#06b6d4"></div>
+        <span class="stack-name">Tailwind CSS</span>
+        <span class="stack-ver">3.x</span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ─── Quick Start ───────────────────────────────────────────────────── -->
+  <section id="quickstart">
+    <span class="section-label">Quick Start</span>
+    <h2 class="section-title">Up and running<br/>in minutes.</h2>
+    <p class="section-desc">Node.js 20+, pnpm 9+, and optionally Docker and Ollama.</p>
+
+    <div class="quickstart-steps">
+      <div class="step-card">
+        <span class="step-num">STEP 1</span>
+        <div class="step-title">Install Dependencies</div>
+        <div class="step-desc">Clone the repo and install all monorepo dependencies with pnpm.</div>
+        <div class="step-code">pnpm install</div>
+      </div>
+
+      <div class="step-card">
+        <span class="step-num">STEP 2</span>
+        <div class="step-title">Configure Secrets</div>
+        <div class="step-desc">Generate JWT secret and AES-256 encryption key, add to .env file.</div>
+        <div class="step-code">openssl rand -hex 32</div>
+      </div>
+
+      <div class="step-card">
+        <span class="step-num">STEP 3</span>
+        <div class="step-title">Start Gateway</div>
+        <div class="step-desc">Launch the Fastify API Gateway on port 3001 with hot reload.</div>
+        <div class="step-code">pnpm --filter @peanut/gateway dev</div>
+      </div>
+
+      <div class="step-card">
+        <span class="step-num">STEP 4</span>
+        <div class="step-title">Start Dashboard</div>
+        <div class="step-desc">Launch the Next.js 15 admin dashboard on port 3000.</div>
+        <div class="step-code">pnpm --filter @peanut/dashboard dev</div>
+      </div>
+
+      <div class="step-card">
+        <span class="step-num">STEP 5</span>
+        <div class="step-title">Connect KiloCode</div>
+        <div class="step-desc">Add the MCP server URL to KiloCode settings and start using local AI.</div>
+        <div class="step-code">http://localhost:3001/mcp</div>
+      </div>
+
+      <div class="step-card">
+        <span class="step-num">PROD</span>
+        <div class="step-title">Docker Compose</div>
+        <div class="step-desc">Deploy all services including Ollama with a single command.</div>
+        <div class="step-code">docker compose up -d</div>
+      </div>
+    </div>
+
+    <div class="code-block" style="margin-top: 2rem;">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <span class="code-lang">bash — Full setup</span>
+      </div>
+      <div class="code-body"><span class="cm"># Clone & install</span>
+git clone https://github.com/your-org/peanut-agent.git && cd peanut-agent
+pnpm install && pnpm --filter @peanut/shared-types build
+
+<span class="cm"># Configure (generate secrets)</span>
+cp services/gateway/.env.example services/gateway/.env
+<span class="cm"># Edit .env: JWT_SECRET and KILO_ENCRYPTION_KEY</span>
+
+<span class="cm"># Start development servers</span>
+pnpm --filter @peanut/gateway dev <span class="cm"># Terminal 1 → port 3001</span>
+pnpm --filter @peanut/dashboard dev <span class="cm"># Terminal 2 → port 3000</span>
+
+<span class="cm"># Open dashboard → http://localhost:3000</span>
+<span class="cm"># Login: admin@peanut.local / PeanutAdmin@2024!</span></div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ─── CTA ──────────────────────────────────────────────────────────── -->
+  <div class="cta-section">
+    <h2>Ready to go <span style="color:var(--accent)">local-first</span>?</h2>
+    <p>Free, private AI inference. Enterprise security. KiloCode native.</p>
+    <div class="cta-actions">
+      <a href="https://github.com/your-org/peanut-agent" class="btn btn-primary">
+        ⭐ Star on GitHub
+      </a>
+      <a href="../README.md" class="btn btn-secondary">
+        📖 Read the Docs
+      </a>
+      <a href="../README.es.md" class="btn btn-secondary">
+        🇪🇸 Leer en Español
+      </a>
+    </div>
+  </div>
+
+  <!-- ─── Footer ───────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">🥜 <span>Peanut</span>Agent Enterprise</div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/your-org/peanut-agent">GitHub</a></li>
+        <li><a href="../README.md">Docs</a></li>
+        <li><a href="../CHANGELOG.md">Changelog</a></li>
+        <li><a href="../LICENSE">License</a></li>
+        <li><a href="../CONTRIBUTING.md">Contributing</a></li>
+      </ul>
+      <div class="footer-copy">MIT License · v2.0.0 · Built for KiloCode</div>
+    </div>
+  </footer>
+
+</body>
+</html>

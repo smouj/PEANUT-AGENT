@@ -1,0 +1,31 @@
+# GitHub Pages configuration for PeanutAgent Enterprise
+# This file enables GitHub Pages to serve docs/index.html as the landing page
+
+title: PeanutAgent Enterprise
+description: "Local-First AI Gateway with MCP Server, Ollama integration, Docker management, and enterprise security. The perfect KiloCode companion."
+url: "https://your-org.github.io"
+baseurl: "/peanut-agent"
+
+# Theme (using no theme — custom HTML/CSS)
+theme: null
+
+# Exclude files from Jekyll processing
+exclude:
+  - "*.md"
+  - "*.ts"
+  - "*.py"
+  - node_modules/
+  - "*.json"
+
+# Include the landing page
+include:
+  - index.html
+
+# SEO
+author: PeanutAgent Team
+twitter:
+  username: peanut_agent
+social:
+  name: PeanutAgent Enterprise
+  links:
+    - https://github.com/your-org/peanut-agent
