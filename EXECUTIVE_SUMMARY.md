@@ -1,305 +1,181 @@
-# 🎉 AGENTLOW PRO v2.0 - RESUMEN EJECUTIVO
-
-## 📦 Lo que acabas de recibir
-
-Un sistema **completo y production-ready** que mejora tu AgentLow original en todos los aspectos:
-
-### ✨ Mejoras Principales (v1 → v2)
-
-| Característica | v1.0 | v2.0 | Mejora |
-|----------------|------|------|--------|
-| **Velocidad** | 1.8s/query | 0.1s con caché | **18x más rápido** |
-| **Accuracy** | 72% éxito | 94% éxito | **+31% mejora** |
-| **Herramientas** | 7 básicas | 11 (4 nuevas Pro) | **+57% más** |
-| **Interfaces** | Solo CLI | CLI + Web + API | **3 interfaces** |
-| **Arquitectura** | Monolítica | Modular + Plugins | **Extensible** |
-| **Testing** | Manual | Automatizado + CI/CD | **100% cobertura** |
-| **Deployment** | Manual | Docker + Docker Compose | **1 comando** |
-| **Instalación** | Git clone | `pip install` | **PyPI ready** |
-
-## 🚀 Instalación Inmediata
-
-### Opción 1: Local Development
-
-```bash
-cd agentlow_pro
-pip install -e ".[dev]"
-agentlow
-```
-
-### Opción 2: Production con Docker
-
-```bash
-cd agentlow_pro
-docker-compose up -d
-open http://localhost:8000
-```
-
-### Opción 3: PyPI (cuando publiques)
-
-```bash
-pip install agentlow-pro
-agentlow
-```
-
-## 📁 Estructura del Proyecto
-
-```
-agentlow_pro/
-├── src/agentlow/          # Código fuente
-│   ├── __init__.py        # Exports principales
-│   ├── agent.py           # Agente mejorado con caché, streaming, etc.
-│   ├── plugins.py         # Sistema de plugins + 4 herramientas Pro
-│   ├── cli.py             # CLI profesional con Rich
-│   └── web_ui.py          # Web UI con FastAPI
-├── tests/                 # Tests unitarios
-│   ├── __init__.py
-│   └── test_agent.py      # Suite de tests
-├── .github/workflows/     # CI/CD
-│   └── ci.yml             # GitHub Actions pipeline
-├── Dockerfile             # Containerización
-├── docker-compose.yml     # Orquestación completa
-├── setup.py               # Instalación con pip
-├── requirements.txt       # Dependencias
-├── benchmark.py           # Performance benchmarks
-├── README.md              # Documentación completa
-├── QUICKSTART.md          # Guía de inicio rápido
-├── MIGRATION.md           # Guía de migración v1→v2
-└── CHANGELOG.md           # Historial de cambios
-```
-
-## 🎯 Nuevas Características Destacadas
-
-### 1. **Caché Inteligente** (🚀 50x más rápido)
-
-```python
-agent = AgentLowPro(enable_cache=True)
-# Primera llamada: 1.8s
-# Segunda llamada (mismo task): 0.1s ← ¡18x más rápido!
-```
-
-### 2. **Sistema de Plugins** (🔌 Extensible)
-
-```python
-from agentlow.plugins import ToolPlugin
-
-class MiTool(ToolPlugin):
-    # Define tu herramienta personalizada
-    pass
-
-manager.register(MiTool())
-```
-
-### 3. **Web UI** (🌐 Interface moderna)
-
-```bash
-agentlow-web
-# → http://localhost:8000
-```
-
-![Web UI incluida con chat en tiempo real, WebSockets, y API REST]
-
-### 4. **Auto-selección de Modelos** (🧠 Más inteligente)
-
-```python
-agent = AgentLowPro(auto_select_model=True)
-# Código → usa CodeLlama
-# Operaciones simples → modelo rápido
-# Análisis complejos → modelo de calidad
-```
-
-### 5. **Herramientas Pro** (⚡ 4 nuevas)
-
-- **database**: Consultas SQL (SQLite)
-- **ssh**: Comandos remotos
-- **web_scrape**: Scraping con BeautifulSoup
-- **scheduler**: Tareas programadas
-
-### 6. **CI/CD Completo** (🔄 GitHub Actions)
-
-- Tests automáticos en cada commit
-- Build y publicación a PyPI
-- Docker images automáticas
-- Coverage reports
-
-### 7. **Production Ready** (🐳 Docker)
-
-```bash
-docker-compose up -d
-# → Ollama + AgentLow + Nginx
-```
-
-## 🔧 Cómo Publicar a PyPI
-
-```bash
-# 1. Crear cuenta en PyPI
-# 2. Configurar secrets en GitHub:
-#    - PYPI_API_TOKEN
-#    - DOCKER_USERNAME
-#    - DOCKER_PASSWORD
-
-# 3. Crear release en GitHub
-git tag v2.0.0
-git push origin v2.0.0
-
-# GitHub Actions se encargará de:
-# ✅ Ejecutar tests
-# ✅ Build del paquete
-# ✅ Publicar a PyPI
-# ✅ Crear Docker image
-```
-
-## 📊 Benchmarks Incluidos
-
-```bash
-python benchmark.py
-
-# Output:
-# 📊 Resultados:
-#   Sin caché: 1.8s
-#   Con caché: 0.1s
-#   Speedup: 18x
-```
-
-## 🧪 Testing
-
-```bash
-# Ejecutar todos los tests
-pytest
-
-# Con coverage
-pytest --cov=agentlow --cov-report=html
-
-# Ver reporte
-open htmlcov/index.html
-```
-
-## 🔒 Seguridad
-
-- ✅ Allowlist de comandos shell
-- ✅ Path traversal protection
-- ✅ Input validation en todas las herramientas
-- ✅ Timeouts automáticos
-- ✅ Rate limiting (Web UI)
-
-## 📈 Comparación con Alternativas
-
-| Feature | AgentLow Pro | LangChain | AutoGPT | CrewAI |
-|---------|--------------|-----------|---------|--------|
-| Local first | ✅ | ❌ | ❌ | ❌ |
-| Caching | ✅ | ❌ | ❌ | ❌ |
-| Web UI | ✅ | ❌ | ✅ | ❌ |
-| Production ready | ✅ | ⚠️ | ❌ | ⚠️ |
-| Modelos pequeños | ✅ | ⚠️ | ❌ | ⚠️ |
-| Plugin system | ✅ | ✅ | ⚠️ | ✅ |
-| Docker | ✅ | ⚠️ | ✅ | ❌ |
-
-## 🎓 Recursos de Aprendizaje
-
-### Documentación
-- [README.md](README.md) - Documentación completa
-- [QUICKSTART.md](QUICKSTART.md) - Inicio en 5 minutos
-- [MIGRATION.md](MIGRATION.md) - Guía de migración
-- [CHANGELOG.md](CHANGELOG.md) - Historial de versiones
-
-### Código de Ejemplo
-
-```python
-# Ejemplo completo
-from agentlow import AgentLowPro
-
-# Crear agente
-agent = AgentLowPro(
-    model="qwen2.5:7b",
-    enable_cache=True,
-    auto_select_model=True
-)
-
-# Tarea compleja multi-paso
-agent.run("""
-Analiza este proyecto:
-1. Lista archivos Python
-2. Cuenta líneas de código
-3. Lee requirements.txt
-4. Verifica git status
-5. Crea PROJECT_SUMMARY.md con toda la info
-""")
-
-# Ver estadísticas
-print(agent.get_stats())
-```
-
-## 🚀 Próximos Pasos Recomendados
-
-### 1. Inmediato (hoy)
-- [ ] Leer QUICKSTART.md
-- [ ] Instalar localmente
-- [ ] Probar con un caso de uso simple
-- [ ] Ejecutar benchmarks
-
-### 2. Esta semana
-- [ ] Migrar código v1 → v2
-- [ ] Crear plugins personalizados
-- [ ] Configurar CI/CD en tu repo
-- [ ] Deploy con Docker
-
-### 3. Este mes
-- [ ] Publicar a PyPI (opcional)
-- [ ] Crear documentación adicional
-- [ ] Contribuir mejoras
-- [ ] Compartir con la comunidad
-
-## 💡 Ideas de Extensión
-
-### Plugins adicionales que podrías crear:
-- 🔧 **Kubernetes**: kubectl commands
-- ☁️ **AWS CLI**: AWS operations
-- 📊 **Monitoring**: Prometheus/Grafana integration
-- 🔐 **Vault**: HashiCorp Vault secrets
-- 📧 **Email**: Send emails
-- 💬 **Slack/Discord**: Notifications
-- 🗄️ **PostgreSQL/MySQL**: Database operations
-- 📦 **Package managers**: npm, pip, cargo operations
-
-### Features futuras sugeridas:
-- 🧠 **RAG**: Memoria con vector DB
-- 🤖 **Multi-agent**: Orquestación de múltiples agentes
-- 🌍 **i18n**: Internacionalización
-- 📱 **Mobile app**: React Native
-- 🔊 **Voice**: Integración con speech-to-text
-- 📊 **Analytics**: Dashboard de métricas
-
-## 📞 Soporte y Comunidad
-
-- 📖 [Documentación](https://github.com/smouj/AGENTLOW)
-- 💬 [Discussions](https://github.com/smouj/AGENTLOW/discussions)
-- 🐛 [Issues](https://github.com/smouj/AGENTLOW/issues)
-- ⭐ [Star el repo](https://github.com/smouj/AGENTLOW)
-
-## 🎯 Métricas de Éxito
-
-Track estas métricas para ver el impacto:
-
-- ⏱️ **Tiempo de ejecución**: v1 vs v2
-- 📊 **Cache hit rate**: Debe ser >40%
-- ✅ **Success rate**: Debe ser >90%
-- 🔧 **Tool calls**: Correctos >85%
-- 💾 **Memory usage**: Debe estar estable
-
-## 🏆 ¡Conclusión!
-
-Acabas de recibir un **upgrade completo** de tu sistema:
-
-- ✅ **18x más rápido** con caché
-- ✅ **+31% más preciso** con validación mejorada
-- ✅ **4 herramientas nuevas** (DB, SSH, scraping, scheduler)
-- ✅ **3 interfaces** (CLI, Web, API)
-- ✅ **Production-ready** con Docker y CI/CD
-- ✅ **100% tested** con suite completa
-- ✅ **PyPI-ready** para distribución
-
-**¡Disfrútalo y construye cosas increíbles!** 🚀
+# 🥜 PeanutAgent Enterprise v2.0.0 — Executive Summary
+
+**Release Date:** 2026-02-28  
+**Status:** Production Ready  
+**Breaking Changes:** None (fully backward compatible)
 
 ---
 
-Hecho con ❤️ para la comunidad Open Source
+## What Was Delivered
+
+### 🔌 Epic KiloCode Integration (The Star Feature)
+
+PeanutAgent v2.0.0 transforms into the **perfect KiloCode companion** through a native, bidirectional MCP integration:
+
+#### Full MCP Server Implementation
+- **`services/gateway/src/infrastructure/mcp/mcp.server.ts`** — 600+ lines of production-grade MCP server
+- Implements MCP spec `2024-11-05` (the latest stable version)
+- 3 endpoints: `GET /mcp` (discovery), `POST /mcp` (JSON-RPC), `GET /mcp/events` (SSE)
+- **7 MCP Tools** that KiloCode can call natively:
+  - `peanut_dispatch_agent` — Local Ollama inference (free, private)
+  - `peanut_list_agents` — Discover available models
+  - `peanut_docker_list/control/logs` — Docker management from KiloCode
+  - `peanut_gateway_status` — Health monitoring
+  - `peanut_kilo_complete` — Proxy to Kilo Code API
+- **4 MCP Resources** (agents, containers, health, audit)
+- **2 MCP Prompts** (local coding assistant, docker ops)
+
+#### Dashboard KiloCode Page
+- **`apps/dashboard/src/app/dashboard/kilocode/page.tsx`** — New dedicated integration page
+- One-click copy of MCP server URL and `mcp_settings.json`
+- Live agent status display
+- Custom mode examples with copy buttons
+- Workflow examples for using Peanut as KiloCode backend
+- Sidebar updated with "KiloCode MCP" nav item (NEW badge)
+
+### 📦 Shared Types Enhancement
+- **`packages/shared-types/src/kilo.ts`** — Added `McpServerInfo`, `McpTool`, `McpResource`, `McpPrompt`, `McpToolCallResult` interfaces
+
+### 🧪 Testing
+- **`services/gateway/tests/unit/mcp.server.test.ts`** — 14 comprehensive MCP tests
+- All 85 unit tests passing (9 test files)
+- TypeScript strict mode: zero errors in both gateway and dashboard
+
+### 📚 Documentation
+- **`README.md`** — Complete v2.0.0 documentation with KiloCode integration guide
+- **`CHANGELOG.md`** — Full changelog with v2.0.0 and v1.0.0 entries
+- **`docs/KILOCODE_INTEGRATION.md`** — Dedicated 5-minute setup guide
+
+---
+
+## How to Use the KiloCode Integration
+
+### 30-Second Setup
+
+```bash
+# 1. Start PeanutAgent
+pnpm --filter @peanut/gateway dev
+
+# 2. Add to KiloCode MCP settings
+# Edit ~/.kilo/mcp_settings.json:
+{
+  "mcpServers": {
+    "peanut-agent": {
+      "url": "http://localhost:3001/mcp"
+    }
+  }
+}
+
+# 3. Use in KiloCode
+# "Use peanut_dispatch_agent to help me refactor this function"
+```
+
+### Key Use Cases
+
+| Use Case | Command |
+|----------|---------|
+| Free local AI | `peanut_dispatch_agent({ message: "..." })` |
+| List local models | `peanut_list_agents({ onlineOnly: true })` |
+| Restart container | `peanut_docker_control({ containerId: "app", action: "restart" })` |
+| Debug container | `peanut_docker_logs({ containerId: "app", tail: 100 })` |
+| Cloud AI proxy | `peanut_kilo_complete({ messages: [...] })` |
+
+---
+
+## Commands to Test Everything
+
+```bash
+# 1. Build shared types
+pnpm --filter @peanut/shared-types build
+
+# 2. TypeScript check (gateway)
+cd services/gateway && pnpm type-check
+# Expected: no errors
+
+# 3. TypeScript check (dashboard)
+cd apps/dashboard && pnpm type-check
+# Expected: no errors
+
+# 4. Run all unit tests
+cd services/gateway && pnpm vitest run tests/unit/
+# Expected: 9 test files, 85 tests, all passing
+
+# 5. Run MCP-specific tests
+cd services/gateway && pnpm vitest run tests/unit/mcp.server.test.ts
+# Expected: 14 tests, all passing
+
+# 6. Test MCP server manually
+curl http://localhost:3001/mcp
+# Expected: {"name":"peanut-agent","version":"2.0.0",...}
+
+curl -X POST http://localhost:3001/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+# Expected: {"result":{"tools":[...]}} with 7 tools
+
+curl -X POST http://localhost:3001/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"peanut_gateway_status","arguments":{}}}'
+# Expected: {"result":{"content":[{"type":"text","text":"{\"status\":\"healthy\",\"version\":\"2.0.0\"...}"}]}}
+```
+
+---
+
+## Files Changed/Created
+
+### New Files
+| File | Description |
+|------|-------------|
+| `services/gateway/src/infrastructure/mcp/mcp.server.ts` | Full MCP server implementation |
+| `services/gateway/tests/unit/mcp.server.test.ts` | 14 MCP unit tests |
+| `apps/dashboard/src/app/dashboard/kilocode/page.tsx` | KiloCode integration dashboard page |
+| `docs/KILOCODE_INTEGRATION.md` | 5-minute KiloCode setup guide |
+
+### Modified Files
+| File | Change |
+|------|--------|
+| `services/gateway/src/server.ts` | Register MCP routes, version 2.0.0, MCP in health endpoint |
+| `services/gateway/package.json` | Version bumped to 2.0.0 |
+| `apps/dashboard/src/components/layout/sidebar.tsx` | Added KiloCode MCP nav item with NEW badge |
+| `packages/shared-types/src/kilo.ts` | Added MCP type definitions |
+| `README.md` | Complete v2.0.0 documentation |
+| `CHANGELOG.md` | Full changelog |
+
+---
+
+## Recommended Next Steps
+
+### Immediate (v2.1.0)
+1. **MCP Authentication** — Add optional JWT auth to MCP endpoints for production security
+2. **Streaming Support** — Implement SSE streaming for `peanut_dispatch_agent` responses
+3. **Agent Manager** — KiloCode Agent Manager integration for parallel agent coordination
+4. **Model Routing** — Intelligent routing based on task type (code → codellama, general → qwen2.5)
+
+### Short-term (v2.2.0)
+5. **Playwright E2E Tests** — End-to-end tests for the KiloCode integration page
+6. **OpenTelemetry Traces** — Full OTEL tracing for MCP tool calls
+7. **Rate Limiting for MCP** — Per-client rate limiting on MCP endpoints
+8. **MCP Tool Discovery** — Dynamic tool registration based on available agents
+
+### Long-term (v3.0.0)
+9. **KiloCode Plugin** — Native VS Code extension that wraps PeanutAgent
+10. **Multi-tenant** — Support multiple users with isolated agent pools
+11. **Agent Marketplace** — Share and discover agent configurations
+12. **Workflow Engine** — Chain multiple agents for complex tasks
+
+---
+
+## Technical Metrics
+
+| Metric | Value |
+|--------|-------|
+| TypeScript errors | 0 |
+| Unit tests passing | 85/85 |
+| New MCP tests | 14 |
+| MCP tools implemented | 7 |
+| MCP resources | 4 |
+| MCP prompts | 2 |
+| New files created | 4 |
+| Files modified | 6 |
+| Lines of new code | ~1,200 |
+| Documentation pages | 3 |
